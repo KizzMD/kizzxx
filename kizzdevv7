@@ -1,0 +1,59 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Kizzxx Hub",
+    LoadingTitle = "Kizzxx",
+    LoadingSubtitle = "ShowRayfield",
+    ConfigurationSaving = {
+        Enabled = false
+    }
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+MainTab:CreateButton({
+    Name = "KizzxxDev",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/KizzMD/kizzxx/refs/heads/main/kizzdev"))()
+    end
+})
+
+MainTab:CreateButton({
+    Name = "Emote Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"))()
+    end
+})
+
+MainTab:CreateButton({
+    Name = "Drop Kick",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/platinww/CrustyMain/refs/heads/main/universal/DropKick.lua"))()
+    end
+})
+
+MainTab:CreateButton({
+    Name = "Animation Fly",
+    Callback = function()
+        local UIS = game:GetService("UserInputService")
+        if UIS.TouchEnabled and not UIS.KeyboardEnabled then
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/396abc/Script/refs/heads/main/MobileFly.lua"))()
+        else
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/396abc/Script/refs/heads/main/FlyR15.lua"))()
+        end
+    end
+})
+
+MainTab:CreateButton({
+    Name = "Axe Hub NDS",
+    Callback = function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/zeroidxx/axe-hub/refs/heads/main/axehub%20nds.txt'))()
+    end
+})
+
+MainTab:CreateButton({
+    Name = "Mythixz Hub",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/YourRealjohn/RobloxScript/refs/heads/main/NDS-NEWGEN.lua",true))()
+    end
+})
