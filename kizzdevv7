@@ -1,9 +1,11 @@
+
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Kizzxx Hub",
-    LoadingTitle = "Kizzxx",
+    Name = "KizzxxDev",
+    LoadingTitle = "KizzxxDev",
     LoadingSubtitle = "ShowRayfield",
+    Size = UDim2.fromOffset(400, 300),
     ConfigurationSaving = {
         Enabled = false
     }
@@ -11,12 +13,135 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
+-- Execute Kizzxx
 MainTab:CreateButton({
-    Name = "KizzxxDev",
+    Name = "Execute Kizzxx",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/KizzMD/kizzxx/refs/heads/main/kizzdev"))()
     end
 })
+
+-- Graphics optimization
+local Lighting = game:GetService("Lighting")
+
+local function makeToggle(name, callback)
+    MainTab:CreateToggle({
+        Name = name,
+        CurrentValue = false,
+        Flag = name,
+        Callback = callback
+    })
+end
+
+-- Anti Lag: disable visual effects
+local effectStates = {}
+
+makeToggle("Anti Lag", function(value)
+    if value then
+        table.clear(effectStates)
+
+        for _, obj in ipairs(game:GetDescendants()) do
+            if obj:IsA("ParticleEmitter")
+            or obj:IsA("Trail")
+            or obj:IsA("Beam")
+            or obj:IsA("Fire")
+            or obj:IsA("Smoke")
+            or obj:IsA("Sparkles")
+            or obj:IsA("PostEffect") then
+
+                effectStates[obj] = obj.Enabled
+                pcall(function()
+                    obj.Enabled = false
+                end)
+            end
+        end
+    else
+        for obj, oldValue in pairs(effectStates) do
+            if obj and obj.Parent then
+                pcall(function()
+                    obj.Enabled = oldValue
+                end)
+            end
+        end
+        table.clear(effectStates)
+    end
+end)
+
+-- Low Graphics
+local materialStates = {}
+
+makeToggle("Low Graphics", function(value)
+    if value then
+        table.clear(materialStates)
+
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                materialStates[obj] = {
+                    Material = obj.Material,
+                    Reflectance = obj.Reflectance
+                }
+
+                pcall(function()
+                    obj.Material = Enum.Material.SmoothPlastic
+                    obj.Reflectance = 0
+                end)
+            end
+        end
+    else
+        for obj, state in pairs(materialStates) do
+            if obj and obj.Parent then
+                pcall(function()
+                    obj.Material = state.Material
+                    obj.Reflectance = state.Reflectance
+                end)
+            end
+        end
+        table.clear(materialStates)
+    end
+end)
+
+-- Disable Shadows
+local oldShadows
+
+makeToggle("Disable Shadows", function(value)
+    if value then
+        oldShadows = Lighting.GlobalShadows
+        Lighting.GlobalShadows = false
+    elseif oldShadows ~= nil then
+        Lighting.GlobalShadows = oldShadows
+        oldShadows = nil
+    end
+end)
+
+-- Remove Textures
+local textureStates = {}
+
+makeToggle("Remove Textures", function(value)
+    if value then
+        table.clear(textureStates)
+
+        for _, obj in ipairs(game:GetDescendants()) do
+            if obj:IsA("Decal") or obj:IsA("Texture") then
+                textureStates[obj] = obj.Transparency
+
+                pcall(function()
+                    obj.Transparency = 1
+                end)
+            end
+        end
+    else
+        for obj, oldValue in pairs(textureStates) do
+            if obj and obj.Parent then
+                pcall(function()
+                    obj.Transparency = oldValue
+                end)
+            end
+        end
+        table.clear(textureStates)
+    end
+end)
+
+-- Original scripts preserved
 
 MainTab:CreateButton({
     Name = "Emote Script",
