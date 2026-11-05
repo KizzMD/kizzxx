@@ -1,4 +1,4 @@
-
+-- hayy teman teman selamat menikmati script aku. maaf ya teman teman kalau jelek
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
@@ -11,137 +11,18 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
+-- TABS
 local MainTab = Window:CreateTab("Main", 4483362458)
+local AntiTab = Window:CreateTab("Anti Lag", 4483362458)
 
--- Execute Kizzxx
+-- MAIN FEATURES
+
 MainTab:CreateButton({
     Name = "Execute Kizzxx",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/KizzMD/kizzxx/refs/heads/main/kizzdev"))()
     end
 })
-
--- Graphics optimization
-local Lighting = game:GetService("Lighting")
-
-local function makeToggle(name, callback)
-    MainTab:CreateToggle({
-        Name = name,
-        CurrentValue = false,
-        Flag = name,
-        Callback = callback
-    })
-end
-
--- Anti Lag: disable visual effects
-local effectStates = {}
-
-makeToggle("Anti Lag", function(value)
-    if value then
-        table.clear(effectStates)
-
-        for _, obj in ipairs(game:GetDescendants()) do
-            if obj:IsA("ParticleEmitter")
-            or obj:IsA("Trail")
-            or obj:IsA("Beam")
-            or obj:IsA("Fire")
-            or obj:IsA("Smoke")
-            or obj:IsA("Sparkles")
-            or obj:IsA("PostEffect") then
-
-                effectStates[obj] = obj.Enabled
-                pcall(function()
-                    obj.Enabled = false
-                end)
-            end
-        end
-    else
-        for obj, oldValue in pairs(effectStates) do
-            if obj and obj.Parent then
-                pcall(function()
-                    obj.Enabled = oldValue
-                end)
-            end
-        end
-        table.clear(effectStates)
-    end
-end)
-
--- Low Graphics
-local materialStates = {}
-
-makeToggle("Low Graphics", function(value)
-    if value then
-        table.clear(materialStates)
-
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                materialStates[obj] = {
-                    Material = obj.Material,
-                    Reflectance = obj.Reflectance
-                }
-
-                pcall(function()
-                    obj.Material = Enum.Material.SmoothPlastic
-                    obj.Reflectance = 0
-                end)
-            end
-        end
-    else
-        for obj, state in pairs(materialStates) do
-            if obj and obj.Parent then
-                pcall(function()
-                    obj.Material = state.Material
-                    obj.Reflectance = state.Reflectance
-                end)
-            end
-        end
-        table.clear(materialStates)
-    end
-end)
-
--- Disable Shadows
-local oldShadows
-
-makeToggle("Disable Shadows", function(value)
-    if value then
-        oldShadows = Lighting.GlobalShadows
-        Lighting.GlobalShadows = false
-    elseif oldShadows ~= nil then
-        Lighting.GlobalShadows = oldShadows
-        oldShadows = nil
-    end
-end)
-
--- Remove Textures
-local textureStates = {}
-
-makeToggle("Remove Textures", function(value)
-    if value then
-        table.clear(textureStates)
-
-        for _, obj in ipairs(game:GetDescendants()) do
-            if obj:IsA("Decal") or obj:IsA("Texture") then
-                textureStates[obj] = obj.Transparency
-
-                pcall(function()
-                    obj.Transparency = 1
-                end)
-            end
-        end
-    else
-        for obj, oldValue in pairs(textureStates) do
-            if obj and obj.Parent then
-                pcall(function()
-                    obj.Transparency = oldValue
-                end)
-            end
-        end
-        table.clear(textureStates)
-    end
-end)
-
--- Original scripts preserved
 
 MainTab:CreateButton({
     Name = "Emote Script",
@@ -161,6 +42,7 @@ MainTab:CreateButton({
     Name = "Animation Fly",
     Callback = function()
         local UIS = game:GetService("UserInputService")
+
         if UIS.TouchEnabled and not UIS.KeyboardEnabled then
             loadstring(game:HttpGet("https://raw.githubusercontent.com/396abc/Script/refs/heads/main/MobileFly.lua"))()
         else
@@ -180,5 +62,276 @@ MainTab:CreateButton({
     Name = "Mythixz Hub",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/YourRealjohn/RobloxScript/refs/heads/main/NDS-NEWGEN.lua",true))()
+    end
+})
+
+-- ANTI LAG FEATURES
+
+local Lighting = game:GetService("Lighting")
+local Terrain = workspace.Terrain
+local UserGameSettings = UserSettings():GetService("UserGameSettings")
+
+local saved = {
+    effects = {},
+    materials = {},
+    textures = {},
+    water = nil,
+    shadows = nil,
+    decoration = nil,
+    diffuse = nil,
+    specular = nil,
+    quality = nil
+}
+
+local function restoreEffects()
+    for obj, state in pairs(saved.effects) do
+        if obj and obj.Parent then
+            pcall(function()
+                obj.Enabled = state
+            end)
+        end
+    end
+    table.clear(saved.effects)
+end
+
+-- ANTI LAG
+AntiTab:CreateToggle({
+    Name = "Anti Lag",
+    CurrentValue = false,
+    Callback = function(value)
+        if value then
+            for _, obj in ipairs(game:GetDescendants()) do
+                if obj:IsA("ParticleEmitter")
+                or obj:IsA("Trail")
+                or obj:IsA("Beam")
+                or obj:IsA("Fire")
+                or obj:IsA("Smoke")
+                or obj:IsA("Sparkles")
+                or obj:IsA("PostEffect") then
+
+                    saved.effects[obj] = obj.Enabled
+                    pcall(function()
+                        obj.Enabled = false
+                    end)
+                end
+            end
+        else
+            restoreEffects()
+        end
+    end
+})
+
+-- LOW GRAPHICS
+AntiTab:CreateToggle({
+    Name = "Low Graphics",
+    CurrentValue = false,
+    Callback = function(value)
+        if value then
+            table.clear(saved.materials)
+
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    saved.materials[obj] = {
+                        obj.Material,
+                        obj.Reflectance
+                    }
+
+                    pcall(function()
+                        obj.Material = Enum.Material.SmoothPlastic
+                        obj.Reflectance = 0
+                    end)
+                end
+            end
+        else
+            for obj, state in pairs(saved.materials) do
+                if obj and obj.Parent then
+                    pcall(function()
+                        obj.Material = state[1]
+                        obj.Reflectance = state[2]
+                    end)
+                end
+            end
+            table.clear(saved.materials)
+        end
+    end
+})
+
+-- DISABLE SHADOWS
+AntiTab:CreateToggle({
+    Name = "Disable Shadows",
+    CurrentValue = false,
+    Callback = function(value)
+        if value then
+            saved.shadows = Lighting.GlobalShadows
+            Lighting.GlobalShadows = false
+        elseif saved.shadows ~= nil then
+            Lighting.GlobalShadows = saved.shadows
+        end
+    end
+})
+
+-- REMOVE TEXTURES
+AntiTab:CreateToggle({
+    Name = "Remove Textures",
+    CurrentValue = false,
+    Callback = function(value)
+        if value then
+            table.clear(saved.textures)
+
+            for _, obj in ipairs(game:GetDescendants()) do
+                if obj:IsA("Decal") or obj:IsA("Texture") then
+                    saved.textures[obj] = obj.Transparency
+
+                    pcall(function()
+                        obj.Transparency = 1
+                    end)
+                end
+            end
+        else
+            for obj, state in pairs(saved.textures) do
+                if obj and obj.Parent then
+                    pcall(function()
+                        obj.Transparency = state
+                    end)
+                end
+            end
+            table.clear(saved.textures)
+        end
+    end
+})
+
+-- OPTIMIZE WATER
+AntiTab:CreateToggle({
+    Name = "Optimize Water",
+    CurrentValue = false,
+    Callback = function(value)
+        if value then
+            saved.water = {
+                Terrain.WaterWaveSize,
+                Terrain.WaterWaveSpeed,
+                Terrain.WaterReflectance
+            }
+
+            Terrain.WaterWaveSize = 0
+            Terrain.WaterWaveSpeed = 0
+            Terrain.WaterReflectance = 0
+        elseif saved.water then
+            Terrain.WaterWaveSize = saved.water[1]
+            Terrain.WaterWaveSpeed = saved.water[2]
+            Terrain.WaterReflectance = saved.water[3]
+        end
+    end
+})
+
+-- TERRAIN OPTIMIZATION
+AntiTab:CreateToggle({
+    Name = "Terrain Optimization",
+    CurrentValue = false,
+    Callback = function(value)
+        if saved.decoration == nil then
+            saved.decoration = Terrain.Decoration
+        end
+
+        Terrain.Decoration = not value
+
+        if not value then
+            Terrain.Decoration = saved.decoration
+            saved.decoration = nil
+        end
+    end
+})
+
+-- OPTIMIZE LIGHTING
+AntiTab:CreateToggle({
+    Name = "Optimize Lighting",
+    CurrentValue = false,
+    Callback = function(value)
+        if value then
+            saved.diffuse = Lighting.EnvironmentDiffuseScale
+            saved.specular = Lighting.EnvironmentSpecularScale
+
+            Lighting.EnvironmentDiffuseScale = 0
+            Lighting.EnvironmentSpecularScale = 0
+        else
+            if saved.diffuse ~= nil then
+                Lighting.EnvironmentDiffuseScale = saved.diffuse
+                Lighting.EnvironmentSpecularScale = saved.specular
+            end
+        end
+    end
+})
+
+-- LOW GRAPHICS QUALITY
+AntiTab:CreateToggle({
+    Name = "Low Graphics Quality",
+    CurrentValue = false,
+    Callback = function(value)
+        pcall(function()
+            if value then
+                saved.quality = UserGameSettings.SavedQualityLevel
+                UserGameSettings.SavedQualityLevel =
+                    Enum.SavedQualitySetting.QualityLevel1
+            elseif saved.quality then
+                UserGameSettings.SavedQualityLevel = saved.quality
+            end
+        end)
+    end
+})
+
+-- RESTORE GRAPHICS
+AntiTab:CreateButton({
+    Name = "Restore Graphics",
+    Callback = function()
+        restoreEffects()
+
+        for obj, state in pairs(saved.materials) do
+            if obj and obj.Parent then
+                pcall(function()
+                    obj.Material = state[1]
+                    obj.Reflectance = state[2]
+                end)
+            end
+        end
+        table.clear(saved.materials)
+
+        for obj, state in pairs(saved.textures) do
+            if obj and obj.Parent then
+                pcall(function()
+                    obj.Transparency = state
+                end)
+            end
+        end
+        table.clear(saved.textures)
+
+        if saved.shadows ~= nil then
+            Lighting.GlobalShadows = saved.shadows
+            saved.shadows = nil
+        end
+
+        if saved.water then
+            Terrain.WaterWaveSize = saved.water[1]
+            Terrain.WaterWaveSpeed = saved.water[2]
+            Terrain.WaterReflectance = saved.water[3]
+            saved.water = nil
+        end
+
+        if saved.decoration ~= nil then
+            Terrain.Decoration = saved.decoration
+            saved.decoration = nil
+        end
+
+        if saved.diffuse ~= nil then
+            Lighting.EnvironmentDiffuseScale = saved.diffuse
+            Lighting.EnvironmentSpecularScale = saved.specular
+            saved.diffuse = nil
+            saved.specular = nil
+        end
+
+        if saved.quality then
+            pcall(function()
+                UserGameSettings.SavedQualityLevel = saved.quality
+            end)
+            saved.quality = nil
+        end
     end
 })
