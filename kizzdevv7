@@ -14,8 +14,10 @@ local Window = Rayfield:CreateWindow({
 -- TABS
 local MainTab = Window:CreateTab("Main", 4483362458)
 local AntiTab = Window:CreateTab("Anti Lag", 4483362458)
+local CloseTab = Window:CreateTab("Close", 4483362458)
 
--- MAIN FEATURES
+-- MAIN
+
 MainTab:CreateButton({
     Name = "Emote Script",
     Callback = function()
@@ -57,7 +59,7 @@ MainTab:CreateButton({
     end
 })
 
--- ANTI LAG FEATURES
+-- ANTI LAG
 
 local Lighting = game:GetService("Lighting")
 local Terrain = workspace.Terrain
@@ -66,13 +68,7 @@ local UserGameSettings = UserSettings():GetService("UserGameSettings")
 local saved = {
     effects = {},
     materials = {},
-    textures = {},
-    water = nil,
-    shadows = nil,
-    decoration = nil,
-    diffuse = nil,
-    specular = nil,
-    quality = nil
+    textures = {}
 }
 
 local function restoreEffects()
@@ -102,6 +98,7 @@ AntiTab:CreateToggle({
                 or obj:IsA("PostEffect") then
 
                     saved.effects[obj] = obj.Enabled
+
                     pcall(function()
                         obj.Enabled = false
                     end)
@@ -143,6 +140,7 @@ AntiTab:CreateToggle({
                     end)
                 end
             end
+
             table.clear(saved.materials)
         end
     end
@@ -187,6 +185,7 @@ AntiTab:CreateToggle({
                     end)
                 end
             end
+
             table.clear(saved.textures)
         end
     end
@@ -261,6 +260,7 @@ AntiTab:CreateToggle({
         pcall(function()
             if value then
                 saved.quality = UserGameSettings.SavedQualityLevel
+
                 UserGameSettings.SavedQualityLevel =
                     Enum.SavedQualitySetting.QualityLevel1
             elseif saved.quality then
@@ -327,3 +327,14 @@ AntiTab:CreateButton({
         end
     end
 })
+
+-- CLOSE TAB
+
+CloseTab:CreateButton({
+    Name = "Close Script",
+    Callback = function()
+        Rayfield:Destroy()
+    end
+})
+
+CloseTab:CreateLabel("Brought to you by Kizzxx")
