@@ -16,14 +16,6 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 local AntiTab = Window:CreateTab("Anti Lag", 4483362458)
 
 -- MAIN FEATURES
-
-MainTab:CreateButton({
-    Name = "Execute Kizzxx",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/KizzMD/kizzxx/refs/heads/main/kizzdev"))()
-    end
-})
-
 MainTab:CreateButton({
     Name = "Emote Script",
     Callback = function()
