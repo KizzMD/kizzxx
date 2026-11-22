@@ -1,5 +1,5 @@
 --[[
-    KizzDev | Malam Sama Kaka  v2.0
+    KizzDev | Malam Sama Kaka  v3.0
     - UI ungu compact: sidebar ikon, search, drag, resize
     - Kalibrasi otomatis: berdiri dekat objek -> tekan "Pelajari" di tab Setup
     - Cek executor + scan otomatis saat dimuat
@@ -31,7 +31,7 @@ local S = {
     InfStamina = false, SetStamina = false, StamVal = 100,
     Noclip = false, InfJump = false, Fly = false, FlySpeed = 60,
     Fullbright = false, ThirdPerson = false, FovOn = false, Fov = 70, NoFog = false,
-    AutoFarm = false, FarmMode = "Nama Kunci/Flip", LobbyStart = false, SkipIntro = false, AutoWin = false,
+    AutoFarm = false, FarmMode = "Otomatis", LobbyStart = false, SkipIntro = false, AutoWin = false,
     ReturnBack = true, InstantPrompt = false, AutoInteract = false,
     ESPKey = false, ESPKaka = false, ESPFlip = false, ESPExit = false, ESPPlayer = false,
     KakaMode = "Otomatis",
@@ -247,50 +247,47 @@ local W, H = math.min(440, vp.X - 20), math.min(260, vp.Y - 20)
 local Main = new("Frame", {Name = "Main", Size = UDim2.fromOffset(W, H),
     Position = UDim2.new(0.5, -W / 2, 0.5, -H / 2), BackgroundColor3 = BG, BorderSizePixel = 0,
     Active = true, ClipsDescendants = true, Parent = Gui})
-corner(Main, 8)
-local mainStroke = stroke(Main, ACCENT, 1.5, 0.2)
-local grad = new("UIGradient", {Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 90, 255)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(70, 40, 160)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(190, 120, 255))}), Parent = mainStroke})
-track(RunService.RenderStepped:Connect(function(dt) grad.Rotation = (grad.Rotation + dt * 60) % 360 end))
+corner(Main, 16)
+stroke(Main, ACCENT, 1, 0.6)
+new("UIGradient", {Color = ColorSequence.new(Color3.fromRGB(18, 15, 27), Color3.fromRGB(11, 10, 15)), Rotation = 90, Parent = Main})
 
 -- Sidebar
-local Side = new("Frame", {Size = UDim2.new(0, 44, 1, -22), BackgroundColor3 = SIDEBG, BorderSizePixel = 0, Parent = Main})
-local Logo = new("ImageButton", {Size = UDim2.fromOffset(34, 34), Position = UDim2.fromOffset(5, 5),
+local Side = new("Frame", {Position = UDim2.fromOffset(7, 7), Size = UDim2.new(0, 40, 1, -14), BackgroundColor3 = SIDEBG, BorderSizePixel = 0, Parent = Main})
+corner(Side, 16)
+local Logo = new("ImageButton", {Size = UDim2.fromOffset(32, 32), Position = UDim2.fromOffset(4, 4),
     BackgroundColor3 = ACCENT, Image = LOGO_ASSET or "", AutoButtonColor = false, ScaleType = Enum.ScaleType.Crop, Parent = Side})
-corner(Logo, 8)
+corner(Logo, 16)
 if not LOGO_ASSET then
     new("TextLabel", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "KD",
         Font = Enum.Font.GothamBlack, TextSize = 15, TextColor3 = Color3.new(1, 1, 1), Parent = Logo})
 end
-local TabList = new("ScrollingFrame", {Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 1, -44),
+local TabList = new("ScrollingFrame", {Position = UDim2.fromOffset(0, 42), Size = UDim2.new(1, 0, 1, -46),
     BackgroundTransparency = 1, ScrollBarThickness = 0, CanvasSize = UDim2.new(),
     AutomaticCanvasSize = Enum.AutomaticSize.Y, BorderSizePixel = 0, Parent = Side})
 new("UIListLayout", {Padding = UDim.new(0, 4), HorizontalAlignment = Enum.HorizontalAlignment.Center, Parent = TabList})
 
 -- Top bar
-local SearchBox = new("Frame", {Position = UDim2.fromOffset(50, 6), Size = UDim2.new(1, -92, 0, 28),
+local SearchBox = new("Frame", {Position = UDim2.fromOffset(55, 8), Size = UDim2.new(1, -101, 0, 28),
     BackgroundColor3 = PANEL, Parent = Main})
-corner(SearchBox, 6); stroke(SearchBox, ACCENT, 1, 0.8)
+corner(SearchBox, 14); stroke(SearchBox, ACCENT, 1, 0.8)
 local sIcon = new("Frame", {Size = UDim2.fromOffset(26, 28), BackgroundTransparency = 1, Parent = SearchBox})
 mkIcon("search", sIcon, SUB)
 local Search = new("TextBox", {Position = UDim2.fromOffset(28, 0), Size = UDim2.new(1, -32, 1, 0),
     BackgroundTransparency = 1, Text = "", PlaceholderText = "Search - KizzDev Library",
     PlaceholderColor3 = SUB, TextColor3 = TEXT, Font = FONT, TextSize = 12, ClearTextOnFocus = false, Parent = SearchBox})
-local DragH = new("TextButton", {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 6),
+local DragH = new("TextButton", {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 8),
     Size = UDim2.fromOffset(30, 28), BackgroundTransparency = 1, Text = "", Parent = Main})
 mkIcon("move", DragH, SUB)
 makeDrag(DragH, Main)
 makeDrag(Logo, Main)
 
 -- Content + footer
-local Content = new("Frame", {Position = UDim2.fromOffset(50, 40), Size = UDim2.new(1, -56, 1, -66),
+local Content = new("Frame", {Position = UDim2.fromOffset(55, 44), Size = UDim2.new(1, -63, 1, -70),
     BackgroundTransparency = 1, ClipsDescendants = true, Parent = Main})
-new("TextLabel", {AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0),
-    Size = UDim2.new(1, 0, 0, 22), BackgroundColor3 = SIDEBG, BorderSizePixel = 0,
-    Text = "KizzDev | Malam Sama Kaka | v2.0", TextColor3 = SUB, Font = FONT, TextSize = 10, Parent = Main})
-local Resize = new("TextButton", {AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -2, 1, 0),
+new("TextLabel", {AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 55, 1, -3),
+    Size = UDim2.new(1, -90, 0, 18), BackgroundTransparency = 1,
+    Text = "KizzDev | Malam Sama Kaka | v3.0", TextColor3 = SUB, Font = FONT, TextSize = 10, Parent = Main})
+local Resize = new("TextButton", {AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -6, 1, -2),
     Size = UDim2.fromOffset(26, 22), BackgroundTransparency = 1, Text = "", ZIndex = 5, Parent = Main})
 mkIcon("resize", Resize, SUB)
 do
@@ -318,7 +315,7 @@ new("UIListLayout", {Padding = UDim.new(0, 4), HorizontalAlignment = Enum.Horizo
 local function notify(msg, dur)
     local t = new("TextLabel", {Size = UDim2.fromOffset(290, 26), BackgroundColor3 = PANEL, Text = msg,
         TextColor3 = TEXT, Font = FONT, TextSize = 12, TextWrapped = true, Parent = Toasts})
-    corner(t, 6); stroke(t, ACCENT, 1, 0.3)
+    corner(t, 12); stroke(t, ACCENT, 1, 0.4)
     task.delay(dur or 3, function() if t.Parent then t:Destroy() end end)
 end
 
@@ -351,9 +348,9 @@ local Sec = {}
 Sec.__index = Sec
 
 local function newTab(name, icon)
-    local btn = new("TextButton", {Size = UDim2.fromOffset(36, 34), BackgroundColor3 = SIDEBG,
+    local btn = new("TextButton", {Size = UDim2.fromOffset(32, 32), BackgroundColor3 = SIDEBG,
         Text = "", AutoButtonColor = false, Parent = TabList})
-    corner(btn, 8)
+    corner(btn, 16)
     TabBtns[name] = btn
     TabIcons[name] = mkIcon(icon, btn, ACCENT)
     local page = new("ScrollingFrame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
@@ -372,12 +369,10 @@ end
 
 function Tab:Section(title, col)
     local holder = new("Frame", {Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundColor3 = PANEL, BorderSizePixel = 0, Parent = (col == 2) and self.Right or self.Left})
-    corner(holder, 6); stroke(holder, ACCENT, 1, 0.8)
+        BackgroundColor3 = Color3.fromRGB(23, 21, 31), BorderSizePixel = 0, Parent = (col == 2) and self.Right or self.Left})
+    corner(holder, 12); stroke(holder, ACCENT, 1, 0.9)
     local header = new("TextButton", {Size = UDim2.new(1, 0, 0, 26), BackgroundTransparency = 1, Text = "", Parent = holder})
-    new("Frame", {Position = UDim2.fromOffset(8, 7), Size = UDim2.fromOffset(3, 12), BackgroundColor3 = ACCENT,
-        BorderSizePixel = 0, Parent = header})
-    new("TextLabel", {Position = UDim2.fromOffset(17, 0), Size = UDim2.new(1, -40, 1, 0), BackgroundTransparency = 1,
+    new("TextLabel", {Position = UDim2.fromOffset(10, 0), Size = UDim2.new(1, -34, 1, 0), BackgroundTransparency = 1,
         Text = title, TextColor3 = TEXT, Font = FONT, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = header})
     local arrow = new("TextLabel", {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 0),
         Size = UDim2.fromOffset(16, 26), BackgroundTransparency = 1, Text = "v", TextColor3 = SUB, Font = FONT,
@@ -437,9 +432,9 @@ function Sec:Slider(name, min, max, def, cb)
         Font = FONT, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, Parent = f})
     local bar = new("Frame", {Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 14),
         BackgroundColor3 = ELEM, Parent = f})
-    corner(bar, 4)
+    corner(bar, 7)
     local fill = new("Frame", {Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = ACCENT, Parent = bar})
-    corner(fill, 4)
+    corner(fill, 7)
     local txt = new("TextLabel", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "",
         TextColor3 = Color3.new(1, 1, 1), Font = FONT, TextSize = 10, ZIndex = 2, Parent = bar})
     local obj = {}
@@ -479,7 +474,7 @@ end
 function Sec:Button(name, cb)
     local b = new("TextButton", {Size = UDim2.new(1, 0, 0, 24), BackgroundColor3 = ELEM, Text = name,
         TextColor3 = TEXT, Font = FONT, TextSize = 11, AutoButtonColor = true, Parent = self.Body})
-    corner(b, 5); stroke(b, ACCENT, 1, 0.85)
+    corner(b, 10); stroke(b, ACCENT, 1, 0.8)
     track(b.Activated:Connect(function() task.spawn(cb) end))
     reg(b, name)
     return b
@@ -498,7 +493,7 @@ function Sec:Input(name, def, cb)
         Font = FONT, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, Parent = f})
     local tb = new("TextBox", {Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 20), BackgroundColor3 = ELEM,
         Text = def, TextColor3 = TEXT, Font = FONT, TextSize = 11, ClearTextOnFocus = false, Parent = f})
-    corner(tb, 5)
+    corner(tb, 10)
     track(tb.FocusLost:Connect(function() cb(tb.Text) end))
     reg(f, name)
     return tb
@@ -513,13 +508,13 @@ function Sec:Dropdown(name, opts, def, cb)
     local btn = new("TextButton", {Size = UDim2.new(1, 0, 0, 22), BackgroundColor3 = ELEM, Text = "  " .. tostring(def),
         TextColor3 = TEXT, Font = FONT, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left,
         AutoButtonColor = true, LayoutOrder = 2, Parent = f})
-    corner(btn, 5)
+    corner(btn, 10)
     local arrow = new("TextLabel", {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 0),
         Size = UDim2.fromOffset(14, 22), BackgroundTransparency = 1, Text = "v", TextColor3 = SUB, Font = FONT,
         TextSize = 11, Parent = btn})
     local list = new("Frame", {Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
         BackgroundColor3 = ELEM, Visible = false, LayoutOrder = 3, Parent = f})
-    corner(list, 5)
+    corner(list, 10)
     new("UIListLayout", {Parent = list})
     local obj = {Value = def}
     local function fill()
@@ -585,8 +580,14 @@ local function getScan(maxAge)
             res.prompts[#res.prompts + 1] = d
         elseif d:IsA("Humanoid") or d:IsA("Animator") or d:IsA("AnimationController") then
             local m = d.Parent
-            if d:IsA("Animator") and m and (m:IsA("Humanoid") or m:IsA("AnimationController")) then m = m.Parent end
-            if m and m:IsA("Model") and m ~= Workspace and not npcSeen[m] and not inChar(m) then
+            if m and not m:IsA("Model") then m = nil end
+            if m and d:IsA("Animator") and m:IsA("Model") == false then m = nil end
+            if m and (d:IsA("Animator") and m.Parent and m.Parent:IsA("Model") and m.Parent ~= Workspace
+                and (m:FindFirstChildOfClass("Humanoid") == nil)) then
+                -- Animator di dalam Humanoid/AnimationController -> ambil model di atasnya
+                m = m.Parent
+            end
+            if m and m ~= Workspace and not npcSeen[m] and not inChar(m) then
                 npcSeen[m] = true
                 res.npcs[#res.npcs + 1] = m
             end
@@ -663,24 +664,52 @@ local function touch(r, part)
     end
 end
 
+local VIM
+pcall(function() VIM = game:GetService("VirtualInputManager") end)
+local function holdKey(key, dur)
+    if not VIM then return end
+    pcall(function()
+        VIM:SendKeyEvent(true, key, false, game)
+        task.wait(dur)
+        VIM:SendKeyEvent(false, key, false, game)
+    end)
+end
+
+-- pakai prompt: fireproximityprompt, kalau gagal tahan tombol interaksi
+local function usePrompt(p)
+    if not p or not p.Parent or not p.Enabled then return end
+    pcall(function() p.HoldDuration = 0 end)
+    local fired = false
+    if fireproximityprompt then fired = pcall(fireproximityprompt, p) end
+    task.wait(0.12)
+    if (not fired) or (p.Parent and p.Enabled) then
+        local k = p.KeyboardKeyCode
+        holdKey((k and k ~= Enum.KeyCode.Unknown) and k or Enum.KeyCode.E, 0.15)
+    end
+end
+
+local function itemPrompts(d)
+    local ps = promptsOf(d)
+    if #ps == 0 and d.Parent and d.Parent ~= Workspace and d.Parent:IsA("Model") then
+        local ok, n = pcall(function() return #d.Parent:GetDescendants() end)
+        if ok and n < 80 then ps = promptsOf(d.Parent) end
+    end
+    return ps
+end
+
 local function collectItem(d)
     local r = hrp()
     if not r or not d or not d.Parent then return false end
     local pos = posOf(d)
     if not pos then return false end
     local old = r.CFrame
-    r.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
-    task.wait(0.2)
+    r.CFrame = CFrame.new(pos + Vector3.new(0, 2.5, 0))
+    task.wait(0.12)
     touch(r, (d:IsA("BasePart") and d) or d:FindFirstChildWhichIsA("BasePart", true))
-    for _, p in ipairs(promptsOf(d)) do
-        if p.Enabled then
-            pcall(function() p.HoldDuration = 0 end)
-            if fireproximityprompt then pcall(fireproximityprompt, p) end
-        end
-    end
+    for _, p in ipairs(itemPrompts(d)) do usePrompt(p) end
     local cd = d:FindFirstChildWhichIsA("ClickDetector", true)
     if cd and fireclickdetector then pcall(fireclickdetector, cd) end
-    task.wait(0.25)
+    task.wait(0.1)
     if S.ReturnBack and r.Parent then r.CFrame = old end
     return true
 end
@@ -690,7 +719,7 @@ local function collectAll(list, force)
     local n = 0
     for _, it in ipairs(list) do
         if not S.Running then break end
-        if it.Parent and (force or not collected[it] or tick() - collected[it] > 20) then
+        if it.Parent and (force or not collected[it] or tick() - collected[it] > 15) then
             collected[it] = tick()
             if collectItem(it) then n = n + 1 end
         end
@@ -698,18 +727,59 @@ local function collectAll(list, force)
     return n
 end
 
+-- semua objek ber-prompt (kecuali Kaka / pintu keluar / start)
 local function promptItems()
-    local out = {}
+    local out, seen = {}, {}
     for _, p in ipairs(getScan(2).prompts) do
         if p.Enabled and p.Parent then
             local par = p.Parent
             if par:IsA("Attachment") then par = par.Parent end
-            if par and (par:IsA("BasePart") or par:IsA("Model")) and not matchAny(par.Name, KAKA_WORDS) then
-                out[#out + 1] = par
+            if par and (par:IsA("BasePart") or par:IsA("Model")) and not seen[par] then
+                local txt = par.Name .. " " .. p.ObjectText .. " " .. p.ActionText
+                if not matchAny(txt, KAKA_WORDS) and not matchAny(txt, EXIT_WORDS) and not matchAny(txt, START_WORDS) then
+                    seen[par] = true
+                    out[#out + 1] = par
+                end
             end
         end
     end
     return out
+end
+
+local function keyTargets(fresh)
+    local sc = getScan(fresh and 0 or 2)
+    if #sc.keys > 0 then return sc.keys end
+    return promptItems()
+end
+local function flipTargets(fresh)
+    local sc = getScan(fresh and 0 or 2)
+    if #sc.flips > 0 then return sc.flips end
+    return promptItems()
+end
+local function farmTargets(mode)
+    local sc = getScan(2)
+    if mode == "Semua Prompt" then return promptItems() end
+    local list = {}
+    for _, i in ipairs(sc.keys) do list[#list + 1] = i end
+    for _, i in ipairs(sc.flips) do list[#list + 1] = i end
+    if #list == 0 and mode == "Otomatis" then return promptItems() end
+    return list
+end
+
+-- baca "Kunci: 0/5" dari HUD game
+local function hudProgress(word)
+    local pg = LP:FindFirstChild("PlayerGui")
+    if not pg then return nil end
+    for _, l in ipairs(pg:GetDescendants()) do
+        if l:IsA("TextLabel") and not l:IsDescendantOf(Gui) then
+            local t = lower(l.Text)
+            if t:find(word, 1, true) then
+                local x, y = t:match("(%d+)%s*/%s*(%d+)")
+                if x then return tonumber(x), tonumber(y) end
+            end
+        end
+    end
+    return nil
 end
 
 local function goExit()
@@ -723,7 +793,7 @@ local function goExit()
             r.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
             task.wait(0.2)
             touch(r, (it:IsA("BasePart") and it) or it:FindFirstChildWhichIsA("BasePart", true))
-            for _, p in ipairs(promptsOf(it)) do pressPrompt(p, false) end
+            for _, p in ipairs(promptsOf(it)) do usePrompt(p) end
             n = n + 1
             task.wait(0.3)
         end
@@ -1173,17 +1243,19 @@ end)
 
 task.spawn(function()
     while S.Running do
-        task.wait(0.6)
+        task.wait(0.4)
         if S.AutoFarm then
             pcall(function()
-                if S.FarmMode == "Semua Prompt" then
-                    collectAll(promptItems())
-                else
-                    local sc = getScan(2)
-                    collectAll(sc.keys)
-                    if S.AutoFarm then collectAll(sc.flips) end
+                local a, b = hudProgress("kunci")
+                if a and b and a >= b then
+                    if S.AutoWin then goExit() task.wait(2) end
+                    return
                 end
-                if S.AutoFarm and S.AutoWin then goExit() end
+                collectAll(farmTargets(S.FarmMode))
+                if S.AutoWin then
+                    local a2, b2 = hudProgress("kunci")
+                    if a2 and b2 and a2 >= b2 then goExit() end
+                end
             end)
         elseif S.AutoWin then
             pcall(goExit)
@@ -1360,7 +1432,7 @@ do
     end)
     p:Slider("Kecepatan jalan", 16, 100, 40, function(v) S.SpeedVal = v end)
     p:Toggle("Infinite Stamina", false, function(v) S.InfStamina = v end)
-    p:Toggle("Atur Stamina (manual)", false, function(v) S.SetStamina = v end)
+    p:Toggle("Atur Stamina", false, function(v) S.SetStamina = v end)
     p:Slider("Nilai Stamina", 0, 500, 100, function(v) S.StamVal = v end)
     p:Toggle("Noclip", false, function(v) S.Noclip = v end)
     p:Toggle("Infinite Jump", false, function(v) S.InfJump = v end)
@@ -1413,23 +1485,33 @@ do
     a:Toggle("Auto Skip Intro", false, function(v) S.SkipIntro = v end)
     a:Toggle("Auto Win (pintu keluar)", false, function(v) S.AutoWin = v end)
     a:Toggle("Kembali ke posisi awal", true, function(v) S.ReturnBack = v end)
-    a:Toggle("Instant Prompt (tanpa tahan)", false, function(v) S.InstantPrompt = v end)
+    a:Toggle("Instant Prompt", false, function(v) S.InstantPrompt = v end)
     a:Toggle("Auto Interact (dekat)", false, function(v) S.AutoInteract = v end)
-    a:Dropdown("Mode Farm", {"Nama Kunci/Flip", "Semua Prompt"}, "Nama Kunci/Flip", function(v) S.FarmMode = v end)
+    a:Dropdown("Mode Farm", {"Otomatis", "Nama Kunci/Flip", "Semua Prompt"}, "Otomatis", function(v) S.FarmMode = v end)
 
     local m = tFarm:Section("Ambil Manual", 2)
+    local function progressText()
+        local x, y = hudProgress("kunci")
+        return x and (" | HUD Kunci " .. x .. "/" .. y) or ""
+    end
     m:Button("Get Key All", function()
-        local sc = getScan(0)
-        if #sc.keys == 0 then notify("Kunci tidak terdeteksi. Pakai tab Setup > Pelajari Kunci", 4) return end
-        notify("Kunci diambil: " .. collectAll(sc.keys, true) .. "/" .. #sc.keys)
+        local list = keyTargets(true)
+        if #list == 0 then notify("Tidak ada objek yang bisa diambil. Dekati kunci lalu Setup > Pelajari Kunci", 5) return end
+        notify("Mengambil " .. #list .. " objek...", 2)
+        local n = collectAll(list, true)
+        notify("Selesai: " .. n .. "/" .. #list .. progressText(), 4)
     end)
     m:Button("Get Flip Flop", function()
-        local sc = getScan(0)
-        if #sc.flips == 0 then notify("Flip flop tidak terdeteksi. Pakai tab Setup > Pelajari Flip Flop", 4) return end
-        notify("Flip flop diambil: " .. collectAll(sc.flips, true) .. "/" .. #sc.flips)
+        local list = flipTargets(true)
+        if #list == 0 then notify("Tidak ada objek yang bisa diambil. Dekati flip flop lalu Setup > Pelajari Flip Flop", 5) return end
+        notify("Mengambil " .. #list .. " objek...", 2)
+        local n = collectAll(list, true)
+        notify("Selesai: " .. n .. "/" .. #list .. progressText(), 4)
     end)
     m:Button("Ambil Semua Prompt", function()
-        notify("Prompt diambil: " .. collectAll(promptItems(), true))
+        local list = promptItems()
+        notify("Mengambil " .. #list .. " prompt...", 2)
+        notify("Selesai: " .. collectAll(list, true) .. "/" .. #list .. progressText(), 4)
     end)
     m:Button("Auto Win Sekarang", function()
         local n = goExit()
@@ -1526,7 +1608,7 @@ selectTab("Home")
 local Float = new("ImageButton", {Size = UDim2.fromOffset(40, 40), Position = UDim2.new(0, 10, 0.5, -20),
     BackgroundColor3 = ACCENT, Image = LOGO_ASSET or "", ScaleType = Enum.ScaleType.Crop,
     AutoButtonColor = false, Parent = Gui})
-corner(Float, 10); stroke(Float, ACCENT_L, 1.5, 0.2)
+corner(Float, 20); stroke(Float, ACCENT_L, 1.5, 0.2)
 if not LOGO_ASSET then
     new("TextLabel", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "KD",
         Font = Enum.Font.GothamBlack, TextSize = 16, TextColor3 = Color3.new(1, 1, 1), Parent = Float})
