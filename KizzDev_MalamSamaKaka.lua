@@ -1,7 +1,8 @@
 --[[
-    KizzDev | Malam Sama Kaka  v1.0
-    UI: sidebar ikon + search + drag + resize (tema ungu)
-    Tab: Home, Player, Auto Farm, ESP, Guard, Settings
+    KizzDev | Malam Sama Kaka  v2.0
+    - UI ungu compact: sidebar ikon, search, drag, resize
+    - Kalibrasi otomatis: berdiri dekat objek -> tekan "Pelajari" di tab Setup
+    - Cek executor + scan otomatis saat dimuat
 ]]
 
 if getgenv and getgenv().KizzDevMSK then
@@ -22,7 +23,7 @@ local TeleportService = game:GetService("TeleportService")
 local LP = Players.LocalPlayer
 
 ----------------------------------------------------------------
--- STATE / CONFIG
+-- STATE / KATA KUNCI
 ----------------------------------------------------------------
 local S = {
     Running = true,
@@ -30,7 +31,7 @@ local S = {
     InfStamina = false, SetStamina = false, StamVal = 100,
     Noclip = false, InfJump = false, Fly = false, FlySpeed = 60,
     Fullbright = false, ThirdPerson = false, FovOn = false, Fov = 70, NoFog = false,
-    AutoFarm = false, LobbyStart = false, SkipIntro = false, AutoWin = false,
+    AutoFarm = false, FarmMode = "Nama Kunci/Flip", LobbyStart = false, SkipIntro = false, AutoWin = false,
     ReturnBack = true, InstantPrompt = false, AutoInteract = false,
     ESPKey = false, ESPKaka = false, ESPFlip = false, ESPExit = false, ESPPlayer = false,
     KakaMode = "Otomatis",
@@ -46,7 +47,8 @@ local KEY_EXCL    = {"monkey", "keyboard", "keypad", "donkey"}
 local FLIP_WORDS  = {"flip", "sandal", "jepit", "flop"}
 local EXIT_WORDS  = {"finish", "exit", "keluar", "escape", "selesai", "gerbang"}
 local EXIT_EXCL   = {"window"}
-local KAKA_WORDS  = {"kaka", "kakak", "kak_", "hantu", "pocong", "kunti", "genderuwo", "tuyul"}
+local KAKA_WORDS  = {"kaka", "kakak", "hantu", "pocong", "kunti", "genderuwo", "tuyul"}
+local START_WORDS = {"start", "mulai", "night", "malam"}
 local STAM_WORDS  = {"stamina", "stam", "energi", "energy", "sprint"}
 
 local Conns = {}
@@ -69,6 +71,7 @@ local function hum() local c = LP.Character return c and c:FindFirstChildOfClass
 local function posOf(i)
     if not i or not i.Parent then return nil end
     if i:IsA("BasePart") then return i.Position end
+    if i:IsA("Attachment") then return i.WorldPosition end
     if i:IsA("Model") then
         local ok, cf = pcall(i.GetPivot, i)
         if ok then return cf.Position end
@@ -83,6 +86,14 @@ local function adorneePart(i)
     return i:FindFirstChildWhichIsA("BasePart", true)
 end
 
+local CAPS = {
+    fireproximityprompt = fireproximityprompt ~= nil,
+    firetouchinterest = firetouchinterest ~= nil,
+    getconnections = getconnections ~= nil,
+    setclipboard = setclipboard ~= nil,
+    writefile = (writefile ~= nil and getcustomasset ~= nil),
+}
+
 task.spawn(function()
     local r = hrp()
     while not r and S.Running do task.wait(0.5) r = hrp() end
@@ -90,10 +101,47 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
+-- LOGO (tertanam, dibuat jadi file lewat writefile)
+----------------------------------------------------------------
+local LOGO_B64 = [[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]]
+local function b64dec(s)
+    local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    local map = {}
+    for i = 1, 64 do map[chars:sub(i, i)] = i - 1 end
+    local out, buf, bits = {}, 0, 0
+    for i = 1, #s do
+        local v = map[s:sub(i, i)]
+        if v then
+            buf = buf * 64 + v
+            bits = bits + 6
+            if bits >= 8 then
+                bits = bits - 8
+                local p = 2 ^ bits
+                local byte = math.floor(buf / p)
+                buf = buf % p
+                out[#out + 1] = string.char(byte)
+            end
+        end
+    end
+    return table.concat(out)
+end
+local LOGO_ASSET
+do
+    local ok, res = pcall(function()
+        if not (writefile and getcustomasset) then return nil end
+        writefile("kizzdev_msk_logo.jpg", b64dec(LOGO_B64))
+        return getcustomasset("kizzdev_msk_logo.jpg")
+    end)
+    if ok and res and res ~= "" then LOGO_ASSET = res end
+end
+
+----------------------------------------------------------------
 -- UI LIBRARY
 ----------------------------------------------------------------
 local ACCENT = Color3.fromRGB(124, 77, 255)
+local ACCENT_L = Color3.fromRGB(190, 150, 255)
 local BG     = Color3.fromRGB(13, 13, 16)
+local SIDEBG = Color3.fromRGB(17, 17, 21)
 local PANEL  = Color3.fromRGB(21, 21, 26)
 local ELEM   = Color3.fromRGB(30, 30, 37)
 local OFF    = Color3.fromRGB(45, 45, 54)
@@ -128,6 +176,48 @@ local Gui = new("ScreenGui", {Name = "KizzDevMSK", ResetOnSpawn = false, IgnoreG
     ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = 999, Parent = Parent})
 local Holder = new("Folder", {Name = "KizzDevMSK_ESP", Parent = Parent})
 
+-- ikon digambar pakai Frame (tidak bergantung font/emoji)
+local function mkIcon(kind, parent, color)
+    color = color or ACCENT
+    local box = new("Frame", {AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(20, 20), BackgroundTransparency = 1, ClipsDescendants = (kind == "player"),
+        Active = false, Parent = parent})
+    local parts = {}
+    local function P(inst, prop) parts[#parts + 1] = {inst, prop} end
+    local function ring(x, y, w, h, th, r)
+        local f = new("Frame", {Position = UDim2.fromOffset(x, y), Size = UDim2.fromOffset(w, h),
+            BackgroundTransparency = 1, Parent = box})
+        corner(f, r or 999)
+        local st = new("UIStroke", {Thickness = th, Color = color, Parent = f})
+        P(st, "Color")
+    end
+    local function solid(x, y, w, h, r, rot)
+        local f = new("Frame", {Position = UDim2.fromOffset(x, y), Size = UDim2.fromOffset(w, h),
+            BackgroundColor3 = color, BorderSizePixel = 0, Rotation = rot or 0, Parent = box})
+        if r then corner(f, r) end
+        P(f, "BackgroundColor3")
+    end
+    local function glyph(t, size)
+        local l = new("TextLabel", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = t,
+            TextSize = size, Font = Enum.Font.GothamBold, TextColor3 = color, Parent = box})
+        P(l, "TextColor3")
+    end
+    if kind == "home" then glyph("⌂", 20)
+    elseif kind == "play" then glyph("▶", 15)
+    elseif kind == "player" then ring(6, 1, 8, 8, 1.5) ring(2, 11, 16, 16, 1.5)
+    elseif kind == "eye" then ring(0, 4, 20, 12, 1.5) solid(7, 7, 6, 6, 3)
+    elseif kind == "shield" then ring(3, 1, 14, 17, 1.5, 6) solid(9, 5, 2, 9)
+    elseif kind == "gear" then ring(4, 4, 12, 12, 2.5) solid(9, 0, 2, 4) solid(9, 16, 2, 4) solid(0, 9, 4, 2) solid(16, 9, 4, 2)
+    elseif kind == "search" then ring(2, 2, 11, 11, 1.5) solid(11, 14, 8, 2, 1, 45)
+    elseif kind == "move" then solid(9, 1, 2, 18, 1) solid(1, 9, 18, 2, 1) solid(7, 0, 6, 2, 1) solid(7, 18, 6, 2, 1)
+    elseif kind == "resize" then solid(3, 12, 15, 2, 1, -45) solid(10, 15, 8, 2, 1, -45)
+    end
+    return parts
+end
+local function colorIcon(parts, c)
+    for _, p in ipairs(parts) do p[1][p[2]] = c end
+end
+
 local function makeDrag(handle, target, onEnd)
     local dragging, startIn, startPos, moved = false, nil, nil, 0
     track(handle.InputBegan:Connect(function(i)
@@ -153,12 +243,12 @@ end
 
 -- Window
 local vp = Workspace.CurrentCamera and Workspace.CurrentCamera.ViewportSize or Vector2.new(800, 400)
-local W, H = math.min(450, vp.X - 20), math.min(270, vp.Y - 20)
+local W, H = math.min(440, vp.X - 20), math.min(260, vp.Y - 20)
 local Main = new("Frame", {Name = "Main", Size = UDim2.fromOffset(W, H),
     Position = UDim2.new(0.5, -W / 2, 0.5, -H / 2), BackgroundColor3 = BG, BorderSizePixel = 0,
     Active = true, ClipsDescendants = true, Parent = Gui})
 corner(Main, 8)
-local mainStroke = stroke(Main, ACCENT, 1.5, 0.15)
+local mainStroke = stroke(Main, ACCENT, 1.5, 0.2)
 local grad = new("UIGradient", {Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 90, 255)),
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(70, 40, 160)),
@@ -166,43 +256,43 @@ local grad = new("UIGradient", {Color = ColorSequence.new({
 track(RunService.RenderStepped:Connect(function(dt) grad.Rotation = (grad.Rotation + dt * 60) % 360 end))
 
 -- Sidebar
-local Side = new("Frame", {Size = UDim2.new(0, 44, 1, -22), BackgroundColor3 = Color3.fromRGB(17, 17, 21),
-    BorderSizePixel = 0, Parent = Main})
-local Logo = new("TextLabel", {Size = UDim2.fromOffset(34, 34), Position = UDim2.fromOffset(5, 5),
-    BackgroundColor3 = ACCENT, Text = "KD", Font = Enum.Font.GothamBlack, TextSize = 15,
-    TextColor3 = Color3.new(1, 1, 1), Parent = Side})
+local Side = new("Frame", {Size = UDim2.new(0, 44, 1, -22), BackgroundColor3 = SIDEBG, BorderSizePixel = 0, Parent = Main})
+local Logo = new("ImageButton", {Size = UDim2.fromOffset(34, 34), Position = UDim2.fromOffset(5, 5),
+    BackgroundColor3 = ACCENT, Image = LOGO_ASSET or "", AutoButtonColor = false, ScaleType = Enum.ScaleType.Crop, Parent = Side})
 corner(Logo, 8)
-new("UIGradient", {Color = ColorSequence.new(Color3.fromRGB(170, 100, 255), Color3.fromRGB(80, 50, 200)),
-    Rotation = 45, Parent = Logo})
+if not LOGO_ASSET then
+    new("TextLabel", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "KD",
+        Font = Enum.Font.GothamBlack, TextSize = 15, TextColor3 = Color3.new(1, 1, 1), Parent = Logo})
+end
 local TabList = new("ScrollingFrame", {Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 1, -44),
     BackgroundTransparency = 1, ScrollBarThickness = 0, CanvasSize = UDim2.new(),
     AutomaticCanvasSize = Enum.AutomaticSize.Y, BorderSizePixel = 0, Parent = Side})
 new("UIListLayout", {Padding = UDim.new(0, 4), HorizontalAlignment = Enum.HorizontalAlignment.Center, Parent = TabList})
 
--- Top bar (search + drag handle)
+-- Top bar
 local SearchBox = new("Frame", {Position = UDim2.fromOffset(50, 6), Size = UDim2.new(1, -92, 0, 28),
     BackgroundColor3 = PANEL, Parent = Main})
 corner(SearchBox, 6); stroke(SearchBox, ACCENT, 1, 0.8)
-new("TextLabel", {Size = UDim2.fromOffset(26, 28), BackgroundTransparency = 1, Text = "🔍", TextSize = 12,
-    TextColor3 = SUB, Font = FONT, Parent = SearchBox})
-local Search = new("TextBox", {Position = UDim2.fromOffset(26, 0), Size = UDim2.new(1, -30, 1, 0),
+local sIcon = new("Frame", {Size = UDim2.fromOffset(26, 28), BackgroundTransparency = 1, Parent = SearchBox})
+mkIcon("search", sIcon, SUB)
+local Search = new("TextBox", {Position = UDim2.fromOffset(28, 0), Size = UDim2.new(1, -32, 1, 0),
     BackgroundTransparency = 1, Text = "", PlaceholderText = "Search - KizzDev Library",
     PlaceholderColor3 = SUB, TextColor3 = TEXT, Font = FONT, TextSize = 12, ClearTextOnFocus = false, Parent = SearchBox})
 local DragH = new("TextButton", {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 6),
-    Size = UDim2.fromOffset(28, 28), BackgroundTransparency = 1, Text = "✥", TextSize = 20,
-    TextColor3 = SUB, Font = FONT, Parent = Main})
+    Size = UDim2.fromOffset(30, 28), BackgroundTransparency = 1, Text = "", Parent = Main})
+mkIcon("move", DragH, SUB)
 makeDrag(DragH, Main)
 makeDrag(Logo, Main)
 
 -- Content + footer
 local Content = new("Frame", {Position = UDim2.fromOffset(50, 40), Size = UDim2.new(1, -56, 1, -66),
     BackgroundTransparency = 1, ClipsDescendants = true, Parent = Main})
-local Footer = new("TextLabel", {AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0),
-    Size = UDim2.new(1, 0, 0, 22), BackgroundColor3 = Color3.fromRGB(17, 17, 21), BorderSizePixel = 0,
-    Text = "KizzDev | Malam Sama Kaka | v1.0", TextColor3 = SUB, Font = FONT, TextSize = 10, Parent = Main})
-local Resize = new("TextButton", {AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -3, 1, -1),
-    Size = UDim2.fromOffset(20, 20), BackgroundTransparency = 1, Text = "⤡", TextSize = 14,
-    TextColor3 = SUB, Font = FONT, ZIndex = 5, Parent = Main})
+new("TextLabel", {AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0),
+    Size = UDim2.new(1, 0, 0, 22), BackgroundColor3 = SIDEBG, BorderSizePixel = 0,
+    Text = "KizzDev | Malam Sama Kaka | v2.0", TextColor3 = SUB, Font = FONT, TextSize = 10, Parent = Main})
+local Resize = new("TextButton", {AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -2, 1, 0),
+    Size = UDim2.fromOffset(26, 22), BackgroundTransparency = 1, Text = "", ZIndex = 5, Parent = Main})
+mkIcon("resize", Resize, SUB)
 do
     local rs, sSize
     track(Resize.InputBegan:Connect(function(i)
@@ -223,18 +313,17 @@ end
 
 -- Toast
 local Toasts = new("Frame", {AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 12),
-    Size = UDim2.fromOffset(260, 10), BackgroundTransparency = 1, Parent = Gui})
+    Size = UDim2.fromOffset(300, 10), BackgroundTransparency = 1, Parent = Gui})
 new("UIListLayout", {Padding = UDim.new(0, 4), HorizontalAlignment = Enum.HorizontalAlignment.Center, Parent = Toasts})
 local function notify(msg, dur)
-    local t = new("TextLabel", {Size = UDim2.fromOffset(250, 26), BackgroundColor3 = PANEL, Text = msg,
-        TextColor3 = TEXT, Font = FONT, TextSize = 12, Parent = Toasts})
+    local t = new("TextLabel", {Size = UDim2.fromOffset(290, 26), BackgroundColor3 = PANEL, Text = msg,
+        TextColor3 = TEXT, Font = FONT, TextSize = 12, TextWrapped = true, Parent = Toasts})
     corner(t, 6); stroke(t, ACCENT, 1, 0.3)
     task.delay(dur or 3, function() if t.Parent then t:Destroy() end end)
 end
 
--- Pages / tabs / search registry
-local Pages, TabBtns, Registry = {}, {}, {}
-local CurrentTab
+-- Pages / tabs / search
+local Pages, TabBtns, TabIcons, Registry = {}, {}, {}, {}
 local function scrollLock(locked)
     for _, p in pairs(Pages) do p.ScrollingEnabled = not locked end
 end
@@ -248,11 +337,11 @@ end
 track(Search:GetPropertyChangedSignal("Text"):Connect(applySearch))
 
 local function selectTab(name)
-    CurrentTab = name
     for n, p in pairs(Pages) do p.Visible = (n == name) end
     for n, b in pairs(TabBtns) do
-        b.BackgroundColor3 = (n == name) and Color3.fromRGB(40, 30, 75) or Color3.fromRGB(17, 17, 21)
-        b.TextColor3 = (n == name) and Color3.fromRGB(190, 150, 255) or ACCENT
+        local on = (n == name)
+        b.BackgroundColor3 = on and Color3.fromRGB(40, 30, 75) or SIDEBG
+        colorIcon(TabIcons[n], on and ACCENT_L or ACCENT)
     end
 end
 
@@ -262,11 +351,11 @@ local Sec = {}
 Sec.__index = Sec
 
 local function newTab(name, icon)
-    local btn = new("TextButton", {Size = UDim2.fromOffset(36, 34), BackgroundColor3 = Color3.fromRGB(17, 17, 21),
-        Text = icon, TextSize = 18, TextColor3 = ACCENT, Font = Enum.Font.GothamBold, AutoButtonColor = false,
-        Parent = TabList})
+    local btn = new("TextButton", {Size = UDim2.fromOffset(36, 34), BackgroundColor3 = SIDEBG,
+        Text = "", AutoButtonColor = false, Parent = TabList})
     corner(btn, 8)
     TabBtns[name] = btn
+    TabIcons[name] = mkIcon(icon, btn, ACCENT)
     local page = new("ScrollingFrame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
         ScrollBarThickness = 2, ScrollBarImageColor3 = ACCENT, CanvasSize = UDim2.new(),
         AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, Parent = Content})
@@ -281,19 +370,19 @@ local function newTab(name, icon)
     return setmetatable({Left = left, Right = right}, Tab)
 end
 
-function Tab:Section(title, icon, col)
+function Tab:Section(title, col)
     local holder = new("Frame", {Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
         BackgroundColor3 = PANEL, BorderSizePixel = 0, Parent = (col == 2) and self.Right or self.Left})
     corner(holder, 6); stroke(holder, ACCENT, 1, 0.8)
-    local header = new("TextButton", {Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1, Text = "", Parent = holder})
-    new("TextLabel", {Position = UDim2.fromOffset(8, 0), Size = UDim2.fromOffset(18, 28), BackgroundTransparency = 1,
-        Text = icon, TextSize = 14, TextColor3 = ACCENT, Font = Enum.Font.GothamBold, Parent = header})
-    new("TextLabel", {Position = UDim2.fromOffset(28, 0), Size = UDim2.new(1, -52, 1, 0), BackgroundTransparency = 1,
+    local header = new("TextButton", {Size = UDim2.new(1, 0, 0, 26), BackgroundTransparency = 1, Text = "", Parent = holder})
+    new("Frame", {Position = UDim2.fromOffset(8, 7), Size = UDim2.fromOffset(3, 12), BackgroundColor3 = ACCENT,
+        BorderSizePixel = 0, Parent = header})
+    new("TextLabel", {Position = UDim2.fromOffset(17, 0), Size = UDim2.new(1, -40, 1, 0), BackgroundTransparency = 1,
         Text = title, TextColor3 = TEXT, Font = FONT, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = header})
     local arrow = new("TextLabel", {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 0),
-        Size = UDim2.fromOffset(16, 28), BackgroundTransparency = 1, Text = "v", TextColor3 = SUB, Font = FONT,
+        Size = UDim2.fromOffset(16, 26), BackgroundTransparency = 1, Text = "v", TextColor3 = SUB, Font = FONT,
         TextSize = 11, Parent = header})
-    local body = new("Frame", {Position = UDim2.fromOffset(0, 28), Size = UDim2.new(1, 0, 0, 0),
+    local body = new("Frame", {Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Parent = holder})
     new("UIListLayout", {Padding = UDim.new(0, 3), Parent = body})
     new("UIPadding", {PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), PaddingBottom = UDim.new(0, 6), Parent = body})
@@ -319,18 +408,24 @@ function Sec:Toggle(name, def, cb)
     corner(knob, 6)
     local state = def and true or false
     local obj = {}
-    local function render()
-        TweenService:Create(sw, TweenInfo.new(0.12), {BackgroundColor3 = state and ACCENT or OFF}):Play()
-        TweenService:Create(knob, TweenInfo.new(0.12), {Position = state and UDim2.fromOffset(18, 2) or UDim2.fromOffset(2, 2)}):Play()
+    local function render(instant)
+        local c = state and ACCENT or OFF
+        local p = state and UDim2.fromOffset(18, 2) or UDim2.fromOffset(2, 2)
+        if instant then
+            sw.BackgroundColor3 = c; knob.Position = p
+        else
+            TweenService:Create(sw, TweenInfo.new(0.12), {BackgroundColor3 = c}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.12), {Position = p}):Play()
+        end
     end
     function obj:Set(v, silent)
         state = v and true or false
-        render()
+        render(false)
         if not silent then task.spawn(cb, state) end
     end
     function obj:Get() return state end
     track(f.Activated:Connect(function() obj:Set(not state) end))
-    render()
+    render(true)
     if state then task.spawn(cb, state) end
     reg(f, name)
     return obj
@@ -393,7 +488,7 @@ end
 function Sec:Label(text)
     local l = new("TextLabel", {Size = UDim2.new(1, 0, 0, 16), BackgroundTransparency = 1, Text = text,
         TextColor3 = SUB, Font = FONT, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left,
-        TextWrapped = true, AutomaticSize = Enum.AutomaticSize.Y, Parent = self.Body})
+        TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, AutomaticSize = Enum.AutomaticSize.Y, Parent = self.Body})
     return {Set = function(_, t) l.Text = t end}
 end
 
@@ -453,7 +548,7 @@ function Sec:Dropdown(name, opts, def, cb)
 end
 
 ----------------------------------------------------------------
--- SCANNER (Kunci / Flip Flop / Pintu keluar / Kaka / Prompts)
+-- SCANNER
 ----------------------------------------------------------------
 local catCache = {}
 local function classify(name)
@@ -484,12 +579,17 @@ local function getScan(maxAge)
         end
         return false
     end
+    local npcSeen = {}
     for _, d in ipairs(Workspace:GetDescendants()) do
         if d:IsA("ProximityPrompt") then
             res.prompts[#res.prompts + 1] = d
-        elseif d:IsA("Humanoid") then
+        elseif d:IsA("Humanoid") or d:IsA("Animator") or d:IsA("AnimationController") then
             local m = d.Parent
-            if m and m:IsA("Model") and not inChar(m) then res.npcs[#res.npcs + 1] = m end
+            if d:IsA("Animator") and m and (m:IsA("Humanoid") or m:IsA("AnimationController")) then m = m.Parent end
+            if m and m:IsA("Model") and m ~= Workspace and not npcSeen[m] and not inChar(m) then
+                npcSeen[m] = true
+                res.npcs[#res.npcs + 1] = m
+            end
         elseif d:IsA("BasePart") or d:IsA("Model") or d:IsA("Tool") then
             local c = classify(d.Name)
             if c.key or c.flip or c.exit or c.kaka then
@@ -545,9 +645,7 @@ end
 local function pressPrompt(p, tp)
     if not fireproximityprompt or not p or not p.Parent or not p.Enabled then return end
     local r = hrp()
-    local par = p.Parent
-    local pos = par and ((par:IsA("BasePart") and par.Position)
-        or (par:IsA("Attachment") and par.WorldPosition) or (par:IsA("Model") and posOf(par)))
+    local pos = posOf(p.Parent)
     local old
     if tp and r and pos and (r.Position - pos).Magnitude > math.max(p.MaxActivationDistance * 0.8, 4) then
         old = r.CFrame
@@ -559,6 +657,12 @@ local function pressPrompt(p, tp)
     if old and r then task.wait(0.15) r.CFrame = old end
 end
 
+local function touch(r, part)
+    if part and firetouchinterest then
+        pcall(function() firetouchinterest(r, part, 0) firetouchinterest(r, part, 1) end)
+    end
+end
+
 local function collectItem(d)
     local r = hrp()
     if not r or not d or not d.Parent then return false end
@@ -567,10 +671,7 @@ local function collectItem(d)
     local old = r.CFrame
     r.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
     task.wait(0.2)
-    local part = (d:IsA("BasePart") and d) or d:FindFirstChildWhichIsA("BasePart", true)
-    if part and firetouchinterest then
-        pcall(function() firetouchinterest(r, part, 0) firetouchinterest(r, part, 1) end)
-    end
+    touch(r, (d:IsA("BasePart") and d) or d:FindFirstChildWhichIsA("BasePart", true))
     for _, p in ipairs(promptsOf(d)) do
         if p.Enabled then
             pcall(function() p.HoldDuration = 0 end)
@@ -585,7 +686,7 @@ local function collectItem(d)
 end
 
 local collected = {}
-local function collectAll(list, label, force)
+local function collectAll(list, force)
     local n = 0
     for _, it in ipairs(list) do
         if not S.Running then break end
@@ -595,6 +696,20 @@ local function collectAll(list, label, force)
         end
     end
     return n
+end
+
+local function promptItems()
+    local out = {}
+    for _, p in ipairs(getScan(2).prompts) do
+        if p.Enabled and p.Parent then
+            local par = p.Parent
+            if par:IsA("Attachment") then par = par.Parent end
+            if par and (par:IsA("BasePart") or par:IsA("Model")) and not matchAny(par.Name, KAKA_WORDS) then
+                out[#out + 1] = par
+            end
+        end
+    end
+    return out
 end
 
 local function goExit()
@@ -607,11 +722,8 @@ local function goExit()
         if pos then
             r.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
             task.wait(0.2)
-            local part = (it:IsA("BasePart") and it) or it:FindFirstChildWhichIsA("BasePart", true)
-            if part and firetouchinterest then
-                pcall(function() firetouchinterest(r, part, 0) firetouchinterest(r, part, 1) end)
-            end
-            for _, p in ipairs(promptsOf(it)) do pcall(function() p.HoldDuration = 0 end) pressPrompt(p, false) end
+            touch(r, (it:IsA("BasePart") and it) or it:FindFirstChildWhichIsA("BasePart", true))
+            for _, p in ipairs(promptsOf(it)) do pressPrompt(p, false) end
             n = n + 1
             task.wait(0.3)
         end
@@ -619,7 +731,7 @@ local function goExit()
     return n
 end
 
--- GUI button helpers (skip intro / start)
+-- tombol GUI (skip intro / start)
 local function guiVisible(b)
     local x = b
     while x and x ~= game do
@@ -657,11 +769,9 @@ local function pressGuiWords(words)
     return n
 end
 
-local START_WORDS = {"start", "mulai", "night", "malam"}
 local function pressStart()
     local n = pressGuiWords({"start", "mulai"})
-    local sc = getScan(3)
-    for _, p in ipairs(sc.prompts) do
+    for _, p in ipairs(getScan(3).prompts) do
         if p.Enabled then
             local t = lower(p.ObjectText .. " " .. p.ActionText .. " " .. (p.Parent and p.Parent.Name or "")
                 .. " " .. ((p.Parent and p.Parent.Parent) and p.Parent.Parent.Name or ""))
@@ -669,6 +779,112 @@ local function pressStart()
         end
     end
     return n
+end
+
+----------------------------------------------------------------
+-- KALIBRASI (pelajari nama objek terdekat)
+----------------------------------------------------------------
+local GENERIC = {part = 1, model = 1, union = 1, meshpart = 1, handle = 1, folder = 1, default = 1, base = 1,
+    baseplate = 1, wedge = 1, cylinder = 1, sphere = 1, block = 1, cube = 1, mesh = 1, root = 1, main = 1}
+
+local function cleanName(n)
+    local s = lower(n)
+    s = s:gsub("[%d%s_%-%.]+$", "")
+    if #s < 3 then s = lower(n) end
+    return s
+end
+local function addWord(list, w)
+    w = lower(w)
+    if #w < 2 or GENERIC[w] then return false end
+    for _, x in ipairs(list) do if x == w then return true end end
+    list[#list + 1] = w
+    resetCats(); scanCache = nil
+    return true
+end
+
+local function isPlayerPart(pt)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.Character and pt:IsDescendantOf(p.Character) then return true end
+    end
+    return false
+end
+
+-- objek interaktif terdekat (prompt > click > touch)
+local function nearestInteractable(radius)
+    local r = hrp()
+    if not r then return nil end
+    local ok, parts = pcall(function() return Workspace:GetPartBoundsInRadius(r.Position, radius) end)
+    if not ok then return nil end
+    local best, bscore, kind, prompt = nil, math.huge, nil, nil
+    for _, pt in ipairs(parts) do
+        if not isPlayerPart(pt) and pt.Size.Magnitude < 80 then
+            local pr = pt:FindFirstChildWhichIsA("ProximityPrompt")
+            local pri = 1
+            if not pr and pt.Parent and pt.Parent:IsA("Model") then pr = pt.Parent:FindFirstChildWhichIsA("ProximityPrompt", true) end
+            local k = pr and "prompt" or nil
+            if not k and pt:FindFirstChildWhichIsA("ClickDetector") then k = "click" pri = 2 end
+            if not k then
+                local okT, tt = pcall(function() return pt:FindFirstChildWhichIsA("TouchTransmitter") end)
+                if okT and tt then k = "touch" pri = 3 end
+            end
+            if k then
+                local score = pri * 1000 + (pt.Position - r.Position).Magnitude
+                if score < bscore then best, bscore, kind, prompt = pt, score, k, pr end
+            end
+        end
+    end
+    return best, kind, prompt
+end
+
+local function itemNameOf(pt)
+    local cand = {}
+    local m = pt:FindFirstAncestorOfClass("Model")
+    if m and m ~= LP.Character then
+        local ok, n = pcall(function() return #m:GetDescendants() end)
+        if ok and n < 80 then cand[#cand + 1] = m.Name end
+    end
+    cand[#cand + 1] = pt.Name
+    if pt.Parent and pt.Parent ~= Workspace then cand[#cand + 1] = pt.Parent.Name end
+    for _, n in ipairs(cand) do
+        local c = cleanName(n)
+        if not GENERIC[c] then return c, n end
+    end
+    return nil
+end
+
+local function learnItem(list, label, extra)
+    local pt, kind, prompt = nearestInteractable(20)
+    if not pt then notify("Tidak ada objek interaktif dalam 20 stud. Dekati dulu objeknya.", 4) return end
+    local w, raw = itemNameOf(pt)
+    if not w then notify("Nama objek terlalu umum (" .. pt.Name .. "). Copy Sekitar lalu kirim ke saya.", 5) return end
+    addWord(list, w)
+    if extra and prompt then
+        addWord(extra, prompt.ObjectText); addWord(extra, prompt.ActionText)
+    end
+    notify(label .. " dipelajari: '" .. w .. "' (" .. kind .. ")", 4)
+end
+
+local function learnKaka()
+    local r = hrp()
+    if not r then return end
+    local best, bd
+    bd = math.huge
+    for _, m in ipairs(getScan(0).npcs) do
+        local p = posOf(m)
+        if p then
+            local d = (p - r.Position).Magnitude
+            if d < bd then best, bd = m, d end
+        end
+    end
+    if not best then notify("Tidak ada NPC/monster terdeteksi. Dekati Kaka lalu coba lagi.", 4) return end
+    local c = cleanName(best.Name)
+    if GENERIC[c] or not addWord(KAKA_WORDS, c) then
+        S.KakaMode = "Semua NPC"
+        notify("Nama '" .. best.Name .. "' umum -> mode deteksi: Semua NPC", 4)
+    else
+        S.KakaMode = "Nama Kaka saja"
+        notify("Kaka dipelajari: '" .. c .. "' (" .. math.floor(bd) .. " m)", 4)
+    end
 end
 
 ----------------------------------------------------------------
@@ -703,9 +919,8 @@ end
 
 local function espTick()
     local desired = {}
-    local any = S.ESPKey or S.ESPKaka or S.ESPFlip or S.ESPExit or S.ESPPlayer
-    if any then
-        local sc = (S.ESPKey or S.ESPFlip or S.ESPExit or S.ESPKaka) and getScan(3) or nil
+    if S.ESPKey or S.ESPKaka or S.ESPFlip or S.ESPExit or S.ESPPlayer then
+        local sc = getScan(3)
         if S.ESPKey then for _, i in ipairs(sc.keys) do desired[i] = "Kunci" end end
         if S.ESPFlip then for _, i in ipairs(sc.flips) do desired[i] = "Flip Flop" end end
         if S.ESPExit then for _, i in ipairs(sc.exits) do desired[i] = "Keluar" end end
@@ -725,25 +940,23 @@ local function espTick()
         local e = ESP[inst]
         if e and r then
             local p = posOf(inst)
-            local nm = kind
-            if kind == "Pemain" then nm = inst.Name end
+            local nm = (kind == "Pemain") and inst.Name or kind
             e.lbl.Text = p and (nm .. " [" .. math.floor((p - r.Position).Magnitude) .. "m]") or nm
         end
     end
 end
 
 ----------------------------------------------------------------
--- RADAR (arah Kaka)
+-- RADAR
 ----------------------------------------------------------------
 local Radar = new("Frame", {AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
     Size = UDim2.fromOffset(220, 220), BackgroundTransparency = 1, Visible = false, Parent = Gui})
 new("TextLabel", {AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromOffset(34, 34),
     BackgroundTransparency = 1, Text = "▲", TextColor3 = Color3.fromRGB(255, 70, 70), TextSize = 30,
     Font = Enum.Font.GothamBold, TextStrokeTransparency = 0.4, Parent = Radar})
-local RadarTxt = new("TextLabel", {AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 60),
+local RadarTxt = new("TextLabel", {AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, -130),
     Size = UDim2.fromOffset(160, 20), BackgroundTransparency = 1, Text = "", TextColor3 = Color3.fromRGB(255, 120, 120),
     Font = FONT, TextSize = 13, TextStrokeTransparency = 0.4, Visible = false, Parent = Gui})
-RadarTxt.Position = UDim2.new(0.5, 0, 0.5, -130)
 
 track(RunService.RenderStepped:Connect(function()
     local m = S.NearKaka
@@ -798,7 +1011,6 @@ local function setThird(on)
     end
 end
 
--- Fly
 local flyBV, flyBG
 local function stopFly()
     if flyBV then flyBV:Destroy() flyBV = nil end
@@ -807,7 +1019,6 @@ local function stopFly()
     if h then h.PlatformStand = false end
 end
 
--- Heartbeat: speed + fly
 track(RunService.Heartbeat:Connect(function()
     local h = hum()
     if S.SpeedOn and h then h.WalkSpeed = S.SpeedVal end
@@ -815,20 +1026,18 @@ track(RunService.Heartbeat:Connect(function()
         local r = hrp()
         local cam = Workspace.CurrentCamera
         if r and h and cam then
-            if not flyBV then
-                flyBV = new("BodyVelocity", {MaxForce = Vector3.new(1e9, 1e9, 1e9), Velocity = Vector3.zero, Parent = r})
+            if not flyBV or not flyBV.Parent then
+                flyBV = new("BodyVelocity", {MaxForce = Vector3.new(1e9, 1e9, 1e9), Velocity = Vector3.new(), Parent = r})
                 flyBG = new("BodyGyro", {MaxTorque = Vector3.new(1e9, 1e9, 1e9), P = 9e4, CFrame = cam.CFrame, Parent = r})
             end
             h.PlatformStand = true
             local loc = cam.CFrame:VectorToObjectSpace(h.MoveDirection)
-            local v = cam.CFrame.LookVector * (-loc.Z) + cam.CFrame.RightVector * loc.X
-            flyBV.Velocity = v * S.FlySpeed
+            flyBV.Velocity = (cam.CFrame.LookVector * (-loc.Z) + cam.CFrame.RightVector * loc.X) * S.FlySpeed
             flyBG.CFrame = cam.CFrame
         end
     end
 end))
 
--- Stepped: noclip
 track(RunService.Stepped:Connect(function()
     if S.Noclip then
         local c = LP.Character
@@ -840,7 +1049,6 @@ track(RunService.Stepped:Connect(function()
     end
 end))
 
--- RenderStepped: fov / fullbright / fog
 track(RunService.RenderStepped:Connect(function()
     local cam = Workspace.CurrentCamera
     if S.FovOn and cam then cam.FieldOfView = S.Fov end
@@ -866,23 +1074,22 @@ end))
 local stamTargets, stamTime = {}, 0
 local function scanStamina()
     stamTargets = {}
-    local roots = {LP, LP.Character}
-    for _, root in ipairs(roots) do
+    for _, root in ipairs({LP, LP.Character}) do
         if root then
             for _, d in ipairs(root:GetDescendants()) do
-                if (d:IsA("NumberValue") or d:IsA("IntValue")) and matchAny(d.Name, STAM_WORDS) and not lower(d.Name):find("max", 1, true) then
+                if (d:IsA("NumberValue") or d:IsA("IntValue")) and matchAny(d.Name, STAM_WORDS)
+                    and not lower(d.Name):find("max", 1, true) then
                     local mx = 100
                     for _, s in ipairs(d.Parent:GetChildren()) do
-                        if (s:IsA("NumberValue") or s:IsA("IntValue")) and s ~= d and lower(s.Name):find("max", 1, true) and matchAny(s.Name, STAM_WORDS) then
-                            mx = s.Value
-                        end
+                        if (s:IsA("NumberValue") or s:IsA("IntValue")) and s ~= d and lower(s.Name):find("max", 1, true)
+                            and matchAny(s.Name, STAM_WORDS) then mx = s.Value end
                     end
                     stamTargets[#stamTargets + 1] = {obj = d, max = mx}
                 end
             end
             for name, val in pairs(root:GetAttributes()) do
                 if type(val) == "number" and matchAny(name, STAM_WORDS) and not lower(name):find("max", 1, true) then
-                    local mx = root:GetAttribute("Max" .. name) or root:GetAttribute("Max" .. name:sub(1, 1):upper() .. name:sub(2)) or 100
+                    local mx = root:GetAttribute("Max" .. name) or 100
                     stamTargets[#stamTargets + 1] = {attr = name, root = root, max = type(mx) == "number" and mx or 100}
                 end
             end
@@ -898,9 +1105,7 @@ task.spawn(function()
             for _, t in ipairs(stamTargets) do
                 pcall(function()
                     if t.obj then
-                        if t.obj.Parent then
-                            t.obj.Value = S.SetStamina and S.StamVal or math.max(t.obj.Value, t.max)
-                        end
+                        if t.obj.Parent then t.obj.Value = S.SetStamina and S.StamVal or math.max(t.obj.Value, t.max) end
                     elseif t.root and t.root.Parent then
                         local cur = t.root:GetAttribute(t.attr) or 0
                         t.root:SetAttribute(t.attr, S.SetStamina and S.StamVal or math.max(cur, t.max))
@@ -911,7 +1116,6 @@ task.spawn(function()
     end
 end)
 
--- Anti AFK
 pcall(function()
     local VU = game:GetService("VirtualUser")
     track(LP.Idled:Connect(function()
@@ -923,9 +1127,8 @@ pcall(function()
 end)
 
 ----------------------------------------------------------------
--- BACKGROUND LOOPS
+-- LOOPS
 ----------------------------------------------------------------
--- ESP loop
 task.spawn(function()
     while S.Running do
         task.wait(0.3)
@@ -933,7 +1136,6 @@ task.spawn(function()
     end
 end)
 
--- Guard / notif loop
 task.spawn(function()
     local lastAct, lastWarn = 0, 0
     while S.Running do
@@ -946,7 +1148,7 @@ task.spawn(function()
                 if m and r and d <= S.GuardDist then
                     if S.WarnText and tick() - lastWarn > 4 then
                         lastWarn = tick()
-                        notify("⚠ Kaka dekat! " .. math.floor(d) .. " m")
+                        notify("Kaka dekat! " .. math.floor(d) .. " m")
                     end
                     if S.Guard and tick() - lastAct > 2 then
                         lastAct = tick()
@@ -969,15 +1171,18 @@ task.spawn(function()
     end
 end)
 
--- Auto farm loop
 task.spawn(function()
     while S.Running do
         task.wait(0.6)
         if S.AutoFarm then
-            local ok = pcall(function()
-                local sc = getScan(2)
-                collectAll(sc.keys)
-                if S.AutoFarm then collectAll(sc.flips) end
+            pcall(function()
+                if S.FarmMode == "Semua Prompt" then
+                    collectAll(promptItems())
+                else
+                    local sc = getScan(2)
+                    collectAll(sc.keys)
+                    if S.AutoFarm then collectAll(sc.flips) end
+                end
                 if S.AutoFarm and S.AutoWin then goExit() end
             end)
         elseif S.AutoWin then
@@ -987,7 +1192,6 @@ task.spawn(function()
     end
 end)
 
--- Lobby start loop
 task.spawn(function()
     while S.Running do
         task.wait(4)
@@ -995,7 +1199,6 @@ task.spawn(function()
     end
 end)
 
--- Skip intro loop
 task.spawn(function()
     while S.Running do
         task.wait(1)
@@ -1003,7 +1206,6 @@ task.spawn(function()
     end
 end)
 
--- Auto interact loop
 task.spawn(function()
     while S.Running do
         task.wait(0.4)
@@ -1012,8 +1214,7 @@ task.spawn(function()
             if r then
                 for _, p in ipairs(getScan(4).prompts) do
                     if p.Parent and p.Enabled then
-                        local par = p.Parent
-                        local pos = (par:IsA("BasePart") and par.Position) or (par:IsA("Attachment") and par.WorldPosition) or (par:IsA("Model") and posOf(par))
+                        local pos = posOf(p.Parent)
                         if pos and (pos - r.Position).Magnitude <= math.max(p.MaxActivationDistance, 10) then
                             pcall(function() p.HoldDuration = 0 end)
                             pcall(fireproximityprompt, p)
@@ -1026,11 +1227,63 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- DIAGNOSTIC REPORT
+-- LAPORAN / COPY SEKITAR
 ----------------------------------------------------------------
+local function out(text)
+    if setclipboard then setclipboard(text) notify("Disalin ke clipboard (" .. #text .. " karakter)", 4)
+    else print(text) notify("Tidak ada setclipboard, lihat console", 4) end
+end
+
+local function reportNearby(radius)
+    local r = hrp()
+    if not r then return "(karakter belum siap)" end
+    local t = {"=== KizzDev MSK - Sekitar " .. radius .. " stud ===", "PlaceId: " .. game.PlaceId}
+    local ok, parts = pcall(function() return Workspace:GetPartBoundsInRadius(r.Position, radius) end)
+    local seen, n = {}, 0
+    if ok then
+        table.sort(parts, function(a, b) return (a.Position - r.Position).Magnitude < (b.Position - r.Position).Magnitude end)
+        for _, pt in ipairs(parts) do
+            if not isPlayerPart(pt) then
+                local full = pt:GetFullName()
+                if not seen[full] then
+                    seen[full] = true
+                    n = n + 1
+                    if n > 60 then break end
+                    local flags = {}
+                    if pt:FindFirstChildWhichIsA("ProximityPrompt", true) then flags[#flags + 1] = "PROMPT" end
+                    if pt:FindFirstChildWhichIsA("ClickDetector") then flags[#flags + 1] = "CLICK" end
+                    pcall(function() if pt:FindFirstChildWhichIsA("TouchTransmitter") then flags[#flags + 1] = "TOUCH" end end)
+                    t[#t + 1] = ("%dm %s [%s] %s"):format(math.floor((pt.Position - r.Position).Magnitude), full, pt.ClassName, table.concat(flags, "+"))
+                end
+            end
+        end
+    end
+    t[#t + 1] = "--- Prompt dalam 60 stud ---"
+    for _, p in ipairs(getScan(0).prompts) do
+        local pos = posOf(p.Parent)
+        if pos and (pos - r.Position).Magnitude <= 60 then
+            t[#t + 1] = ("%dm %s | Action=%s | Object=%s | Enabled=%s"):format(
+                math.floor((pos - r.Position).Magnitude), p:GetFullName(), p.ActionText, p.ObjectText, tostring(p.Enabled))
+        end
+    end
+    t[#t + 1] = "--- NPC/Humanoid/Animator ---"
+    for _, m in ipairs(getScan(0).npcs) do
+        local pos = posOf(m)
+        t[#t + 1] = ("%dm %s"):format(pos and math.floor((pos - r.Position).Magnitude) or -1, m:GetFullName())
+    end
+    return table.concat(t, "\n")
+end
+
 local function buildReport()
     local sc = getScan(0)
-    local t = {"=== KizzDev MSK Scan ===", "PlaceId: " .. game.PlaceId, "Game: " .. game.Name}
+    local t = {"=== KizzDev MSK Scan v2 ===", "PlaceId: " .. game.PlaceId, "Game: " .. game.Name}
+    local ca = {}
+    for k, v in pairs(CAPS) do ca[#ca + 1] = k .. "=" .. tostring(v) end
+    t[#t + 1] = "Executor caps: " .. table.concat(ca, ", ")
+    t[#t + 1] = "Kata Kunci: " .. table.concat(KEY_WORDS, ",")
+    t[#t + 1] = "Kata Flip: " .. table.concat(FLIP_WORDS, ",")
+    t[#t + 1] = "Kata Kaka: " .. table.concat(KAKA_WORDS, ",")
+    t[#t + 1] = "Kata Start: " .. table.concat(START_WORDS, ",")
     local function add(title, list)
         t[#t + 1] = ("[%s] %d"):format(title, #list)
         for i = 1, math.min(#list, 12) do
@@ -1039,9 +1292,9 @@ local function buildReport()
         end
     end
     add("Kunci", sc.keys); add("Flip Flop", sc.flips); add("Pintu Keluar", sc.exits)
-    add("Kaka (nama)", sc.kaka); add("NPC Humanoid", sc.npcs)
+    add("Kaka (nama)", sc.kaka); add("NPC", sc.npcs)
     t[#t + 1] = "[Prompt] " .. #sc.prompts
-    for i = 1, math.min(#sc.prompts, 20) do
+    for i = 1, math.min(#sc.prompts, 25) do
         local p = sc.prompts[i]
         t[#t + 1] = ("  %s | %s | %s"):format(p:GetFullName(), p.ActionText, p.ObjectText)
     end
@@ -1064,17 +1317,23 @@ end
 -- BUILD UI
 ----------------------------------------------------------------
 -- HOME
-local tHome = newTab("Home", "⌂")
+local tHome = newTab("Home", "home")
 do
-    local s = tHome:Section("KizzDev - Malam Sama Kaka", "★", 1)
+    local s = tHome:Section("KizzDev - Malam Sama Kaka", 1)
     local lFps = s:Label("FPS: -")
     local lPing = s:Label("Ping: -")
     local lPl = s:Label("Pemain: -")
-    local s2 = tHome:Section("Info", "ℹ", 2)
-    s2:Label("Aktifkan fitur di tab masing-masing. Kalau Kunci/Kaka tidak terdeteksi, atur kata kunci di tab Settings lalu tekan Refresh ESP.")
+    local s2 = tHome:Section("Status Executor", 2)
+    local function yn(v) return v and "OK" or "TIDAK ADA" end
+    s2:Label("fireproximityprompt: " .. yn(CAPS.fireproximityprompt))
+    s2:Label("firetouchinterest: " .. yn(CAPS.firetouchinterest))
+    s2:Label("getconnections: " .. yn(CAPS.getconnections))
+    s2:Label("setclipboard: " .. yn(CAPS.setclipboard))
     local ex = "-"
     pcall(function() ex = identifyexecutor() end)
     s2:Label("Executor: " .. tostring(ex))
+    local s3 = tHome:Section("Cara Pakai", 1)
+    s3:Label("Kalau Kunci/Kaka belum terdeteksi: buka tab Setup, dekati objeknya, lalu tekan tombol Pelajari.")
     local frames, acc = 0, 0
     track(RunService.RenderStepped:Connect(function(dt) frames = frames + 1 acc = acc + dt end))
     task.spawn(function()
@@ -1092,9 +1351,9 @@ do
 end
 
 -- PLAYER
-local tPlayer = newTab("Player", "👤")
+local tPlayer = newTab("Player", "player")
 do
-    local p = tPlayer:Section("Player", "👤", 1)
+    local p = tPlayer:Section("Player", 1)
     p:Toggle("Speed Modifier", false, function(v)
         S.SpeedOn = v
         if not v then local h = hum() if h then h.WalkSpeed = 16 end end
@@ -1108,7 +1367,7 @@ do
     p:Toggle("Fly", false, function(v) S.Fly = v if not v then stopFly() end end)
     p:Slider("Kecepatan terbang", 20, 150, 60, function(v) S.FlySpeed = v end)
 
-    local v = tPlayer:Section("Visual", "☀", 2)
+    local v = tPlayer:Section("Visual", 2)
     v:Toggle("Fullbright", false, function(on)
         if on then saveLight() else restoreLight("fb") end
         S.Fullbright = on
@@ -1124,7 +1383,7 @@ do
         S.NoFog = on
     end)
 
-    local t = tPlayer:Section("Teleport", "➤", 2)
+    local t = tPlayer:Section("Teleport", 2)
     local sel = t:Dropdown("Pilih pemain", function()
         local o = {}
         for _, pl in ipairs(Players:GetPlayers()) do if pl ~= LP then o[#o + 1] = pl.Name end end
@@ -1146,9 +1405,9 @@ do
 end
 
 -- AUTO FARM
-local tFarm = newTab("Auto Farm", "▶")
+local tFarm = newTab("Auto Farm", "play")
 do
-    local a = tFarm:Section("Auto Farm", "▶", 1)
+    local a = tFarm:Section("Auto Farm", 1)
     a:Toggle("Aktifkan Auto Farm", false, function(v) S.AutoFarm = v end)
     a:Toggle("Lobby Auto Start (Night)", false, function(v) S.LobbyStart = v end)
     a:Toggle("Auto Skip Intro", false, function(v) S.SkipIntro = v end)
@@ -1156,21 +1415,25 @@ do
     a:Toggle("Kembali ke posisi awal", true, function(v) S.ReturnBack = v end)
     a:Toggle("Instant Prompt (tanpa tahan)", false, function(v) S.InstantPrompt = v end)
     a:Toggle("Auto Interact (dekat)", false, function(v) S.AutoInteract = v end)
+    a:Dropdown("Mode Farm", {"Nama Kunci/Flip", "Semua Prompt"}, "Nama Kunci/Flip", function(v) S.FarmMode = v end)
 
-    local m = tFarm:Section("Ambil Manual", "✋", 2)
+    local m = tFarm:Section("Ambil Manual", 2)
     m:Button("Get Key All", function()
         local sc = getScan(0)
-        local n = collectAll(sc.keys, "Kunci", true)
-        notify("Kunci diambil: " .. n .. "/" .. #sc.keys)
+        if #sc.keys == 0 then notify("Kunci tidak terdeteksi. Pakai tab Setup > Pelajari Kunci", 4) return end
+        notify("Kunci diambil: " .. collectAll(sc.keys, true) .. "/" .. #sc.keys)
     end)
     m:Button("Get Flip Flop", function()
         local sc = getScan(0)
-        local n = collectAll(sc.flips, "Flip Flop", true)
-        notify("Flip flop diambil: " .. n .. "/" .. #sc.flips)
+        if #sc.flips == 0 then notify("Flip flop tidak terdeteksi. Pakai tab Setup > Pelajari Flip Flop", 4) return end
+        notify("Flip flop diambil: " .. collectAll(sc.flips, true) .. "/" .. #sc.flips)
+    end)
+    m:Button("Ambil Semua Prompt", function()
+        notify("Prompt diambil: " .. collectAll(promptItems(), true))
     end)
     m:Button("Auto Win Sekarang", function()
         local n = goExit()
-        notify(n > 0 and ("Ke pintu keluar x" .. n) or "Pintu keluar tidak ditemukan")
+        notify(n > 0 and ("Ke pintu keluar x" .. n) or "Pintu keluar tidak ditemukan. Pakai Setup > Pelajari Pintu", 4)
     end)
     m:Button("Tekan Start Sekarang", function()
         notify("Tombol/prompt ditekan: " .. pressStart())
@@ -1178,9 +1441,9 @@ do
 end
 
 -- ESP
-local tEsp = newTab("ESP", "👁")
+local tEsp = newTab("ESP", "eye")
 do
-    local e = tEsp:Section("ESP Options", "👁", 1)
+    local e = tEsp:Section("ESP Options", 1)
     e:Toggle("ESP Kunci", false, function(v) S.ESPKey = v end)
     e:Toggle("ESP Kaka", false, function(v) S.ESPKaka = v end)
     e:Toggle("ESP Flip Flop", false, function(v) S.ESPFlip = v end)
@@ -1191,18 +1454,18 @@ do
         for i in pairs(ESP) do removeESP(i) end
         notify("ESP direfresh")
     end)
-    local k = tEsp:Section("Deteksi Kaka", "☠", 2)
+    local k = tEsp:Section("Deteksi Kaka", 2)
     k:Dropdown("Mode deteksi", {"Otomatis", "Nama Kaka saja", "Semua NPC"}, "Otomatis", function(v)
         S.KakaMode = v
         scanCache = nil
     end)
-    k:Label("Otomatis: pakai nama Kaka, kalau tidak ketemu pakai semua NPC bernyawa.")
+    k:Label("Otomatis: pakai nama Kaka, kalau tidak ketemu pakai semua NPC.")
 end
 
 -- GUARD
-local tGuard = newTab("Guard", "🛡")
+local tGuard = newTab("Guard", "shield")
 do
-    local g = tGuard:Section("Guard System", "🛡", 1)
+    local g = tGuard:Section("Guard System", 1)
     g:Toggle("Guard Kaka", false, function(v) S.Guard = v end)
     g:Dropdown("Mode Berlindung", {"Zona Aman", "Lari Menjauh", "Notifikasi saja"}, "Zona Aman", function(v) S.GuardMode = v end)
     g:Slider("Jarak Deteksi (m)", 10, 100, 30, function(v) S.GuardDist = v end)
@@ -1210,29 +1473,40 @@ do
         local r = hrp()
         if r then S.SafeCF = r.CFrame notify("Zona aman disimpan") end
     end)
-    local n = tGuard:Section("Notifications", "🔔", 2)
+    local n = tGuard:Section("Notifications", 2)
     n:Toggle("Peringatan Teks", false, function(v) S.WarnText = v end)
     n:Toggle("Radar Arah", false, function(v) S.Radar = v end)
 end
 
--- SETTINGS
-local tSet = newTab("Settings", "⚙")
+-- SETUP
+local tSet = newTab("Setup", "gear")
 do
-    local u = tSet:Section("Umum", "⚙", 1)
-    u:Toggle("Anti AFK", true, function(v) S.AntiAFK = v end)
-    u:Button("Rejoin", function() TeleportService:Teleport(game.PlaceId, LP) end)
-    u:Button("Server Hop", function() TeleportService:Teleport(game.PlaceId, LP) end)
-    u:Button("Copy Scan Report", function()
-        local rep = buildReport()
-        if setclipboard then setclipboard(rep) notify("Report disalin") else print(rep) notify("Report di console") end
+    local c = tSet:Section("Kalibrasi (dekati objek)", 1)
+    c:Label("Berdiri dekat objeknya, lalu tekan tombol.")
+    c:Button("Pelajari Kunci", function() learnItem(KEY_WORDS, "Kunci") end)
+    c:Button("Pelajari Flip Flop", function() learnItem(FLIP_WORDS, "Flip Flop") end)
+    c:Button("Pelajari Pintu Keluar", function() learnItem(EXIT_WORDS, "Pintu") end)
+    c:Button("Pelajari Start (Night)", function() learnItem(START_WORDS, "Start", START_WORDS) end)
+    c:Button("Pelajari Kaka (NPC terdekat)", function() learnKaka() end)
+    c:Button("Scan Ulang", function()
+        local sc = getScan(0)
+        notify(("Kunci %d | Flip %d | Pintu %d | Kaka %d | NPC %d"):format(#sc.keys, #sc.flips, #sc.exits, #sc.kaka, #sc.npcs), 5)
     end)
-    u:Button("Unload Script", function() if getgenv then getgenv().KizzDevMSK.Unload() end end)
 
-    local k = tSet:Section("Kata Kunci (pisah koma)", "✎", 2)
+    local u = tSet:Section("Umum", 2)
+    u:Toggle("Anti AFK", true, function(v) S.AntiAFK = v end)
+    u:Button("Copy Sekitar 25m", function() out(reportNearby(25)) end)
+    u:Button("Copy Scan Report", function() out(buildReport()) end)
+    u:Button("Rejoin", function() TeleportService:Teleport(game.PlaceId, LP) end)
+    u:Button("Unload Script", function() if getgenv and getgenv().KizzDevMSK then getgenv().KizzDevMSK.Unload() end end)
+
+    local k = tSet:Section("Kata Kunci (pisah koma)", 2)
     local function parse(str, tbl)
         for i = #tbl, 1, -1 do tbl[i] = nil end
         for w in tostring(str):gmatch("[^,]+") do
-            w = lower(w):gsub("^%s+", ""):gsub("%s+$", "")
+            w = lower(w)
+            w = w:gsub("^%s+", "")
+            w = w:gsub("%s+$", "")
             if #w > 0 then tbl[#tbl + 1] = w end
         end
         resetCats(); scanCache = nil
@@ -1247,12 +1521,16 @@ end
 selectTab("Home")
 
 ----------------------------------------------------------------
--- FLOATING BUTTON + UNLOAD
+-- TOMBOL MELAYANG + UNLOAD
 ----------------------------------------------------------------
-local Float = new("TextButton", {Size = UDim2.fromOffset(40, 40), Position = UDim2.new(0, 10, 0.5, -20),
-    BackgroundColor3 = ACCENT, Text = "KD", Font = Enum.Font.GothamBlack, TextSize = 16,
-    TextColor3 = Color3.new(1, 1, 1), AutoButtonColor = false, Parent = Gui})
-corner(Float, 10); stroke(Float, Color3.fromRGB(200, 160, 255), 1.5, 0.2)
+local Float = new("ImageButton", {Size = UDim2.fromOffset(40, 40), Position = UDim2.new(0, 10, 0.5, -20),
+    BackgroundColor3 = ACCENT, Image = LOGO_ASSET or "", ScaleType = Enum.ScaleType.Crop,
+    AutoButtonColor = false, Parent = Gui})
+corner(Float, 10); stroke(Float, ACCENT_L, 1.5, 0.2)
+if not LOGO_ASSET then
+    new("TextLabel", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "KD",
+        Font = Enum.Font.GothamBlack, TextSize = 16, TextColor3 = Color3.new(1, 1, 1), Parent = Float})
+end
 makeDrag(Float, Float, function(moved)
     if moved < 6 then Main.Visible = not Main.Visible end
 end)
@@ -1272,4 +1550,14 @@ local function unload()
 end
 if getgenv then getgenv().KizzDevMSK = {Unload = unload} end
 
-notify("KizzDev Malam Sama Kaka dimuat ✔", 4)
+notify("KizzDev Malam Sama Kaka v2 dimuat", 3)
+task.spawn(function()
+    task.wait(2)
+    local ok, sc = pcall(getScan, 0)
+    if ok and sc then
+        notify(("Terdeteksi - Kunci %d | Flip %d | Pintu %d | Kaka %d | NPC %d"):format(
+            #sc.keys, #sc.flips, #sc.exits, #sc.kaka, #sc.npcs), 6)
+        if #sc.keys == 0 then notify("Kunci belum ketemu: buka tab Setup > Pelajari Kunci", 6) end
+    end
+    if not CAPS.fireproximityprompt then notify("Executor tidak punya fireproximityprompt: ambil item/prompt terbatas", 6) end
+end)
